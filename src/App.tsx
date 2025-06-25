@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { register } from '@tauri-apps/plugin-global-shortcut';
 import "./App.css";
-import { getCurrentWindow } from '@tauri-apps/api/window';
 
 function App() {
   const [value, setValue] = useState("");
