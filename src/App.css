@@ -1,0 +1,19 @@
+.input-form {
+  background-color: #1324469c;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.text-box {
+  caret-color: rgb(116, 227, 255);
+  font-style: italic;
+  border: none;
+  outline: none;
+  background-color: #ffffff00;
+  color: rgb(116, 227, 255);
+}
+
+body {
+  background-color: #1324469c;
+}
