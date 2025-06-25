@@ -1,5 +1,7 @@
 use reqwest::Client;
 use serde::Serialize;
+use tauri::Manager;
+use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
 
 #[derive(Serialize)]
 struct Payload {
@@ -27,8 +29,26 @@ async fn input(text: String) -> Result<String, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            let app_handle = app.handle().clone();
+            let ctrl_tilde_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::Backquote);
+            
+            // Register global shortcut with handler
+            app.handle().plugin(
+                tauri_plugin_global_shortcut::Builder::new().with_handler(move |_app, shortcut, event| {
+                    if shortcut == &ctrl_tilde_shortcut && event.state() == ShortcutState::Pressed {
+                        if let Some(window) = app_handle.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build()
+            ).expect("Failed to register global shortcut plugin");
+            
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![input])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

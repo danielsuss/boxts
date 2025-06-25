@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import "./App.css";
 
 function App() {
@@ -31,11 +32,12 @@ function App() {
     return () => window.removeEventListener("focus", handleWindowFocus);
   }, []);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log(value);
     invoke("input", { text: value });
     setValue("");
+    await getCurrentWindow().minimize();
   };
 
   return (
