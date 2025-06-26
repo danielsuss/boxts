@@ -21,6 +21,10 @@
 4. Test/verify functionality before moving to next component
 5. Keep codebase lean and focused
 
+## Development Notes
+
+- User handles all npm/build commands - do not run npm commands via Bash tool
+
 ## Tauri v2 Documentation
 
 ⚠️ **Important**: Current model training data is limited to Tauri v1. When working with Tauri v2 features, always prompt the user to provide relevant Tauri v2 documentation links or code examples to ensure accurate implementation.

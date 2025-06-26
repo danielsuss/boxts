@@ -5,7 +5,7 @@ use tauri::{
 
 mod commands;
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -34,6 +34,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle) -> Result<Stri
     match command {
         "center" => commands::center_command(app).await,
         "exit" => commands::exit_command(app).await,
+        "nextmonitor" => commands::nextmonitor_command(app).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
@@ -50,11 +51,9 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            // Create tray menu
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit])?;
 
-            // Create system tray icon
             let _tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
