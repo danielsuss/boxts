@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { register, unregister, isRegistered } from "@tauri-apps/plugin-global-shortcut";
+import {
+  register,
+  unregister,
+  isRegistered,
+} from "@tauri-apps/plugin-global-shortcut";
 
 function App() {
   const [text, setText] = useState("");
@@ -20,6 +24,10 @@ function App() {
     e.preventDefault();
     setText("");
     setCursorPos(0);
+    // Reset input scroll position
+    if (inputRef.current) {
+      inputRef.current.scrollLeft = 0;
+    }
   };
 
   const updateCursorPos = () => {
@@ -52,16 +60,16 @@ function App() {
   useEffect(() => {
     const shortcut = "Alt+Enter";
     const window = getCurrentWindow();
-    
+
     const setupGlobalShortcut = async () => {
       try {
         // Unregister if already registered (for hot reloads)
         if (await isRegistered(shortcut)) {
           await unregister(shortcut);
         }
-        
+
         await register(shortcut, async (event) => {
-          if (event.state === 'Pressed') {
+          if (event.state === "Pressed") {
             const isVisible = await window.isVisible();
             if (isVisible) {
               await window.hide();
@@ -71,32 +79,33 @@ function App() {
             }
           }
         });
-        
       } catch (error) {
         console.error("Failed to register global shortcut:", error);
       }
     };
-    
+
     const setupFocusHandler = async () => {
       try {
         // Hide window when it loses focus
-        const unlistenBlur = await window.onFocusChanged(({ payload: focused }) => {
-          if (!focused) {
-            window.hide().catch(console.error);
+        const unlistenBlur = await window.onFocusChanged(
+          ({ payload: focused }) => {
+            if (!focused) {
+              window.hide().catch(console.error);
+            }
           }
-        });
-        
+        );
+
         return unlistenBlur;
       } catch (error) {
         console.error("Failed to setup focus handler:", error);
         return () => {};
       }
     };
-    
+
     setupGlobalShortcut();
     let unlistenFocus: (() => void) | undefined;
-    
-    setupFocusHandler().then(unlisten => {
+
+    setupFocusHandler().then((unlisten) => {
       unlistenFocus = unlisten;
     });
 
