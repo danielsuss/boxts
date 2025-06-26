@@ -1,8 +1,9 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
-    Manager,
 };
+
+mod commands;
 
 const AVAILABLE_COMMANDS: &[&str] = &["center"];
 
@@ -31,7 +32,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle) -> Result<Stri
     println!("Command: {}", command);
     
     match command {
-        "center" => center_command(app).await,
+        "center" => commands::center_command(app).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
@@ -41,15 +42,6 @@ async fn handle_text(text: String) -> Result<String, String> {
     Ok("Text processed".to_string())
 }
 
-async fn center_command(app: tauri::AppHandle) -> Result<String, String> {
-    let window = app.get_webview_window("main")
-        .ok_or("Failed to get main window")?;
-    
-    window.center()
-        .map_err(|e| format!("Failed to center window: {}", e))?;
-    
-    Ok("Window centered".to_string())
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
