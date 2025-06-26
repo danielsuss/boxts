@@ -1,11 +1,14 @@
-use tauri::{Manager, PhysicalPosition, Position};
+use tauri::{Manager, PhysicalPosition, Position, State};
+use crate::{AppState, WindowPosition};
 
-pub async fn center_command(app: tauri::AppHandle) -> Result<String, String> {
+pub async fn center_command(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     let window = app.get_webview_window("main")
         .ok_or("Failed to get main window")?;
     
     window.center()
         .map_err(|e| format!("Failed to center window: {}", e))?;
+    
+    *state.window_position.lock().unwrap() = WindowPosition::Center;
     
     Ok("Window centered".to_string())
 }
@@ -16,7 +19,7 @@ pub async fn exit_command(app: tauri::AppHandle) -> Result<String, String> {
     Ok("Application exited".to_string())
 }
 
-pub async fn nextmonitor_command(app: tauri::AppHandle) -> Result<String, String> {
+pub async fn nextmonitor_command(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     let window = app.get_webview_window("main")
         .ok_or("Failed to get main window")?;
     
@@ -52,11 +55,21 @@ pub async fn nextmonitor_command(app: tauri::AppHandle) -> Result<String, String
     window.set_position(Position::Physical(new_pos))
         .map_err(|e| format!("Failed to set window position: {}", e))?;
     
+    let current_position = state.window_position.lock().unwrap().clone();
+    match current_position {
+        WindowPosition::FreePos => {},
+        WindowPosition::Center => { center_command(app.clone(), state.clone()).await?; },
+        WindowPosition::TopLeft => { topleft_command(app.clone(), state.clone()).await?; },
+        WindowPosition::TopRight => { topright_command(app.clone(), state.clone()).await?; },
+        WindowPosition::BottomLeft => { bottomleft_command(app.clone(), state.clone()).await?; },
+        WindowPosition::BottomRight => { bottomright_command(app.clone(), state.clone()).await?; },
+    }
+    
     Ok(format!("Moved to monitor: {}", 
         next_monitor.name().map_or("Unknown", |v| v)))
 }
 
-pub async fn topleft_command(app: tauri::AppHandle) -> Result<String, String> {
+pub async fn topleft_command(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     let window = app.get_webview_window("main")
         .ok_or("Failed to get main window")?;
     
@@ -74,11 +87,13 @@ pub async fn topleft_command(app: tauri::AppHandle) -> Result<String, String> {
     
     window.set_position(Position::Physical(new_pos))
         .map_err(|e| format!("Failed to set window position: {}", e))?;
+    
+    *state.window_position.lock().unwrap() = WindowPosition::TopLeft;
     
     Ok("Window moved to top-left".to_string())
 }
 
-pub async fn topright_command(app: tauri::AppHandle) -> Result<String, String> {
+pub async fn topright_command(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     let window = app.get_webview_window("main")
         .ok_or("Failed to get main window")?;
     
@@ -92,17 +107,19 @@ pub async fn topright_command(app: tauri::AppHandle) -> Result<String, String> {
     let margin = 10;
     
     let new_pos = PhysicalPosition::new(
-        work_area.position.x + work_area.size.width as i32 - window_size.width as i32 - margin,
+        work_area.position.x + work_area.size.width as i32 - window_size.width as i32 + margin,
         work_area.position.y + margin
     );
     
     window.set_position(Position::Physical(new_pos))
         .map_err(|e| format!("Failed to set window position: {}", e))?;
     
+    *state.window_position.lock().unwrap() = WindowPosition::TopRight;
+    
     Ok("Window moved to top-right".to_string())
 }
 
-pub async fn bottomleft_command(app: tauri::AppHandle) -> Result<String, String> {
+pub async fn bottomleft_command(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     let window = app.get_webview_window("main")
         .ok_or("Failed to get main window")?;
     
@@ -117,16 +134,18 @@ pub async fn bottomleft_command(app: tauri::AppHandle) -> Result<String, String>
     
     let new_pos = PhysicalPosition::new(
         work_area.position.x + margin,
-        work_area.position.y + work_area.size.height as i32 - window_size.height as i32 - margin
+        work_area.position.y + work_area.size.height as i32 - window_size.height as i32 + margin
     );
     
     window.set_position(Position::Physical(new_pos))
         .map_err(|e| format!("Failed to set window position: {}", e))?;
     
+    *state.window_position.lock().unwrap() = WindowPosition::BottomLeft;
+    
     Ok("Window moved to bottom-left".to_string())
 }
 
-pub async fn bottomright_command(app: tauri::AppHandle) -> Result<String, String> {
+pub async fn bottomright_command(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     let window = app.get_webview_window("main")
         .ok_or("Failed to get main window")?;
     
@@ -140,12 +159,14 @@ pub async fn bottomright_command(app: tauri::AppHandle) -> Result<String, String
     let margin = 10;
     
     let new_pos = PhysicalPosition::new(
-        work_area.position.x + work_area.size.width as i32 - window_size.width as i32 - margin,
-        work_area.position.y + work_area.size.height as i32 - window_size.height as i32 - margin
+        work_area.position.x + work_area.size.width as i32 - window_size.width as i32 + margin,
+        work_area.position.y + work_area.size.height as i32 - window_size.height as i32 + margin
     );
     
     window.set_position(Position::Physical(new_pos))
         .map_err(|e| format!("Failed to set window position: {}", e))?;
+    
+    *state.window_position.lock().unwrap() = WindowPosition::BottomRight;
     
     Ok("Window moved to bottom-right".to_string())
 }

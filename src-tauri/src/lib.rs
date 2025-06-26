@@ -1,9 +1,25 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
+    State,
 };
+use std::sync::Mutex;
 
 mod commands;
+
+#[derive(Debug, Clone)]
+enum WindowPosition {
+    FreePos,
+    Center,
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+}
+
+struct AppState {
+    window_position: Mutex<WindowPosition>,
+}
 
 const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright"];
 
@@ -13,15 +29,16 @@ fn get_available_commands() -> Vec<String> {
 }
 
 #[tauri::command]
-async fn process_input(text: String, app: tauri::AppHandle) -> Result<String, String> {
+async fn process_input(text: String, app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     if text.starts_with('/') {
-        handle_command(&text[1..], app).await
+        handle_command(&text[1..], app, state).await
     } else {
+        *state.window_position.lock().unwrap() = WindowPosition::FreePos;
         handle_text(text).await
     }
 }
 
-async fn handle_command(command_str: &str, app: tauri::AppHandle) -> Result<String, String> {
+async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     let parts: Vec<&str> = command_str.split_whitespace().collect();
     
     if parts.is_empty() {
@@ -32,13 +49,13 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle) -> Result<Stri
     println!("Command: {}", command);
     
     match command {
-        "center" => commands::center_command(app).await,
+        "center" => commands::center_command(app, state).await,
         "exit" => commands::exit_command(app).await,
-        "nextmonitor" => commands::nextmonitor_command(app).await,
-        "topleft" => commands::topleft_command(app).await,
-        "topright" => commands::topright_command(app).await,
-        "bottomleft" => commands::bottomleft_command(app).await,
-        "bottomright" => commands::bottomright_command(app).await,
+        "nextmonitor" => commands::nextmonitor_command(app, state).await,
+        "topleft" => commands::topleft_command(app, state).await,
+        "topright" => commands::topright_command(app, state).await,
+        "bottomleft" => commands::bottomleft_command(app, state).await,
+        "bottomright" => commands::bottomright_command(app, state).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
@@ -48,12 +65,14 @@ async fn handle_text(text: String) -> Result<String, String> {
     Ok("Text processed".to_string())
 }
 
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .manage(AppState {
+            window_position: Mutex::new(WindowPosition::FreePos),
+        })
         .setup(|app| {
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit])?;
