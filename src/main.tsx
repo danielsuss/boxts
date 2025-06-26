@@ -12,6 +12,8 @@ function App() {
   const [text, setText] = useState("");
   const [cursorPos, setCursorPos] = useState(0);
   const [hasSelection, setHasSelection] = useState(false);
+  const [availableCommands, setAvailableCommands] = useState<string[]>([]);
+  const [suggestion, setSuggestion] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Color scheme
@@ -19,6 +21,17 @@ function App() {
     background: "#131313",
     text: "#c4c4c4",
     border: "#535353",
+    suggestion: "#90EE90",
+  };
+
+  const updateSuggestion = (inputText: string) => {
+    if (inputText.startsWith('/') && inputText.length > 1) {
+      const command = inputText.slice(1);
+      const match = availableCommands.find(cmd => cmd.startsWith(command));
+      setSuggestion(match ? `/${match}` : "");
+    } else {
+      setSuggestion("");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,6 +45,7 @@ function App() {
     
     setText("");
     setCursorPos(0);
+    setSuggestion("");
     // Reset input scroll position
     if (inputRef.current) {
       inputRef.current.scrollLeft = 0;
@@ -63,6 +77,13 @@ function App() {
   const getCharWidth = () => {
     return Math.round(getCanvasContext().measureText("A").width);
   };
+
+  // Fetch available commands on startup
+  useEffect(() => {
+    invoke<string[]>("get_available_commands")
+      .then(setAvailableCommands)
+      .catch(console.error);
+  }, []);
 
   // Register global shortcut and window focus handling
   useEffect(() => {
@@ -151,6 +172,7 @@ function App() {
           onChange={(e) => {
             setText(e.target.value);
             updateCursorPos();
+            updateSuggestion(e.target.value);
           }}
           onSelect={updateCursorPos}
           onKeyDown={(e) => {
@@ -183,8 +205,27 @@ function App() {
             backgroundColor: `${colors.background}80`,
             color: colors.text,
             caretColor: "transparent",
+            position: "relative",
+            zIndex: 1,
           }}
         />
+        {suggestion && (
+          <div
+            style={{
+              position: "absolute",
+              left: "10px",
+              top: "9px",
+              fontSize: "16px",
+              fontFamily: "Consolas, 'Courier New', monospace",
+              color: colors.suggestion,
+              pointerEvents: "none",
+              zIndex: 0,
+              lineHeight: "19px",
+            }}
+          >
+            {suggestion}
+          </div>
+        )}
         {!hasSelection && (
           <div
             style={{
@@ -207,6 +248,7 @@ function App() {
               fontSize: "16px",
               fontFamily: "Consolas, 'Courier New', monospace",
               lineHeight: "19px",
+              zIndex: 2,
             }}
           >
             {text[cursorPos] || ""}

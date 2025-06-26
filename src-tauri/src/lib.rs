@@ -3,6 +3,13 @@ use tauri::{
     tray::TrayIconBuilder,
 };
 
+const AVAILABLE_COMMANDS: &[&str] = &["center"];
+
+#[tauri::command]
+fn get_available_commands() -> Vec<String> {
+    AVAILABLE_COMMANDS.iter().map(|s| s.to_string()).collect()
+}
+
 #[tauri::command]
 async fn process_input(text: String) -> Result<String, String> {
     if text.starts_with('/') {
@@ -23,7 +30,8 @@ async fn handle_command(command_str: &str) -> Result<String, String> {
     println!("Command: {}", command);
     
     match command {
-        _ => Ok(format!("Unknown command: {}", command))
+        "center" => Ok("Center command executed".to_string()),
+        _ => Err(format!("Unknown command: {}", command))
     }
 }
 
@@ -55,7 +63,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![process_input])
+        .invoke_handler(tauri::generate_handler![process_input, get_available_commands])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
