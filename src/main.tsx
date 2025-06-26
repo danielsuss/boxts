@@ -21,14 +21,14 @@ function App() {
     background: "#131313",
     text: "#c4c4c4",
     border: "#535353",
-    suggestion: "#90EE90",
+    suggestion: "#79f079",
     error: "#FF6B6B",
   };
 
   const updateSuggestion = (inputText: string) => {
-    if (inputText.startsWith('/') && inputText.length > 1) {
+    if (inputText.startsWith("/") && inputText.length > 1) {
       const command = inputText.slice(1);
-      const match = availableCommands.find(cmd => cmd.startsWith(command));
+      const match = availableCommands.find((cmd) => cmd.startsWith(command));
       setSuggestion(match ? match.slice(command.length) : "");
     } else {
       setSuggestion("");
@@ -37,13 +37,13 @@ function App() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       await invoke("process_input", { text });
     } catch (error) {
       console.error("Error processing input:", error);
     }
-    
+
     setText("");
     setCursorPos(0);
     setSuggestion("");
@@ -167,6 +167,29 @@ function App() {
         }}
       >
         <input
+          type="text"
+          value=""
+          readOnly
+          placeholder=""
+          spellCheck={false}
+          style={{
+            width: "400px",
+            height: "35px",
+            borderRadius: "4px",
+            border: `1px solid ${colors.border}`,
+            padding: "0 10px",
+            fontSize: "16px",
+            fontFamily: "Consolas, 'Courier New', monospace",
+            outline: "none",
+            backgroundColor: `${colors.background}80`,
+            color: "transparent",
+            caretColor: "transparent",
+            position: "relative",
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+        <input
           ref={inputRef}
           type="text"
           value={text}
@@ -195,49 +218,43 @@ function App() {
           spellCheck={false}
           onContextMenu={(e) => e.preventDefault()}
           style={{
+            position: "absolute",
+            left: "0px",
+            top: "0px",
             width: "400px",
             height: "35px",
             borderRadius: "4px",
-            border: `1px solid ${colors.border}`,
+            border: "none",
             padding: "0 10px",
             fontSize: "16px",
             fontFamily: "Consolas, 'Courier New', monospace",
             outline: "none",
-            backgroundColor: `${colors.background}80`,
-            color: "transparent",
+            backgroundColor: "transparent",
+            color: (() => {
+              if (text.startsWith("/") && text.length > 1) {
+                // Check for multiple slashes
+                const hasMultipleSlashes = text.slice(1).includes('/');
+                if (hasMultipleSlashes) {
+                  return colors.error;
+                }
+                
+                const command = text.slice(1).split(' ')[0];
+                const isValidCommand = availableCommands.includes(command);
+                const showError = !suggestion && !isValidCommand;
+                return showError ? colors.error : colors.text;
+              }
+              return colors.text;
+            })(),
             caretColor: "transparent",
-            position: "relative",
-            zIndex: 0,
+            zIndex: 2,
           }}
         />
-        <div
-          style={{
-            position: "absolute",
-            left: "10px",
-            top: "9px",
-            width: "380px",
-            height: "19px",
-            fontSize: "16px",
-            fontFamily: "Consolas, 'Courier New', monospace",
-            color: (() => {
-              const command = text.slice(1);
-              const isValidCommand = availableCommands.includes(command);
-              const showError = text.startsWith('/') && text.length > 1 && !suggestion && !isValidCommand;
-              return showError ? colors.error : colors.text;
-            })(),
-            pointerEvents: "none",
-            zIndex: 2,
-            lineHeight: "19px",
-          }}
-        >
-          {text}
-        </div>
         {suggestion && (
           <div
             style={{
               position: "absolute",
               left: `${10 + measureTextWidth(text, text.length)}px`,
-              top: "9px",
+              top: "8px",
               fontSize: "16px",
               fontFamily: "Consolas, 'Courier New', monospace",
               color: colors.suggestion,
@@ -260,7 +277,7 @@ function App() {
                     (inputRef.current?.scrollLeft || 0)
                 ) + 1
               }px`,
-              top: "9px",
+              top: "8px",
               width: `${getCharWidth()}px`,
               height: "19px",
               backgroundColor: colors.text,
@@ -274,7 +291,9 @@ function App() {
               zIndex: 3,
             }}
           >
-            {(suggestion && cursorPos === text.length) ? suggestion[0] : (text[cursorPos] || "")}
+            {suggestion && cursorPos === text.length
+              ? suggestion[0]
+              : text[cursorPos] || ""}
           </div>
         )}
       </form>
