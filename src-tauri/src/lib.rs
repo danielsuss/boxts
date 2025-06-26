@@ -5,7 +5,7 @@ use tauri::{
 
 mod commands;
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -35,6 +35,10 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle) -> Result<Stri
         "center" => commands::center_command(app).await,
         "exit" => commands::exit_command(app).await,
         "nextmonitor" => commands::nextmonitor_command(app).await,
+        "topleft" => commands::topleft_command(app).await,
+        "topright" => commands::topright_command(app).await,
+        "bottomleft" => commands::bottomleft_command(app).await,
+        "bottomright" => commands::bottomright_command(app).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }

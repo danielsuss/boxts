@@ -55,3 +55,97 @@ pub async fn nextmonitor_command(app: tauri::AppHandle) -> Result<String, String
     Ok(format!("Moved to monitor: {}", 
         next_monitor.name().map_or("Unknown", |v| v)))
 }
+
+pub async fn topleft_command(app: tauri::AppHandle) -> Result<String, String> {
+    let window = app.get_webview_window("main")
+        .ok_or("Failed to get main window")?;
+    
+    let current_monitor = window.current_monitor()
+        .map_err(|e| format!("Failed to get current monitor: {}", e))?
+        .ok_or("No current monitor detected")?;
+    
+    let work_area = current_monitor.work_area();
+    let margin = 10;
+    
+    let new_pos = PhysicalPosition::new(
+        work_area.position.x + margin,
+        work_area.position.y + margin
+    );
+    
+    window.set_position(Position::Physical(new_pos))
+        .map_err(|e| format!("Failed to set window position: {}", e))?;
+    
+    Ok("Window moved to top-left".to_string())
+}
+
+pub async fn topright_command(app: tauri::AppHandle) -> Result<String, String> {
+    let window = app.get_webview_window("main")
+        .ok_or("Failed to get main window")?;
+    
+    let current_monitor = window.current_monitor()
+        .map_err(|e| format!("Failed to get current monitor: {}", e))?
+        .ok_or("No current monitor detected")?;
+    
+    let work_area = current_monitor.work_area();
+    let window_size = window.outer_size()
+        .map_err(|e| format!("Failed to get window size: {}", e))?;
+    let margin = 10;
+    
+    let new_pos = PhysicalPosition::new(
+        work_area.position.x + work_area.size.width as i32 - window_size.width as i32 - margin,
+        work_area.position.y + margin
+    );
+    
+    window.set_position(Position::Physical(new_pos))
+        .map_err(|e| format!("Failed to set window position: {}", e))?;
+    
+    Ok("Window moved to top-right".to_string())
+}
+
+pub async fn bottomleft_command(app: tauri::AppHandle) -> Result<String, String> {
+    let window = app.get_webview_window("main")
+        .ok_or("Failed to get main window")?;
+    
+    let current_monitor = window.current_monitor()
+        .map_err(|e| format!("Failed to get current monitor: {}", e))?
+        .ok_or("No current monitor detected")?;
+    
+    let work_area = current_monitor.work_area();
+    let window_size = window.outer_size()
+        .map_err(|e| format!("Failed to get window size: {}", e))?;
+    let margin = 10;
+    
+    let new_pos = PhysicalPosition::new(
+        work_area.position.x + margin,
+        work_area.position.y + work_area.size.height as i32 - window_size.height as i32 - margin
+    );
+    
+    window.set_position(Position::Physical(new_pos))
+        .map_err(|e| format!("Failed to set window position: {}", e))?;
+    
+    Ok("Window moved to bottom-left".to_string())
+}
+
+pub async fn bottomright_command(app: tauri::AppHandle) -> Result<String, String> {
+    let window = app.get_webview_window("main")
+        .ok_or("Failed to get main window")?;
+    
+    let current_monitor = window.current_monitor()
+        .map_err(|e| format!("Failed to get current monitor: {}", e))?
+        .ok_or("No current monitor detected")?;
+    
+    let work_area = current_monitor.work_area();
+    let window_size = window.outer_size()
+        .map_err(|e| format!("Failed to get window size: {}", e))?;
+    let margin = 10;
+    
+    let new_pos = PhysicalPosition::new(
+        work_area.position.x + work_area.size.width as i32 - window_size.width as i32 - margin,
+        work_area.position.y + work_area.size.height as i32 - window_size.height as i32 - margin
+    );
+    
+    window.set_position(Position::Physical(new_pos))
+        .map_err(|e| format!("Failed to set window position: {}", e))?;
+    
+    Ok("Window moved to bottom-right".to_string())
+}
