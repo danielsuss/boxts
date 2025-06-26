@@ -46,8 +46,8 @@ __pycache__/
 *.mp3
 models/
 
-# Generated files
-*.json
+# Generated files  
+# (removed *.json - too broad, was ignoring config files)
 
 # Claude
 .claude/
