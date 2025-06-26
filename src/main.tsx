@@ -35,7 +35,7 @@ function App() {
   const getCanvasContext = () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d")!;
-    ctx.font = '16px Consolas, "Courier New", monospace';
+    ctx.font = "16px Consolas, 'Courier New', monospace";
     return ctx;
   };
 
@@ -46,6 +46,7 @@ function App() {
   const getCharWidth = () => {
     return Math.round(getCanvasContext().measureText("A").width);
   };
+
 
   return (
     <>
@@ -66,67 +67,74 @@ function App() {
           position: "relative",
         }}
       >
-      <input
-        ref={inputRef}
-        type="text"
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          updateCursorPos();
-        }}
-        onSelect={updateCursorPos}
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
+        <input
+          ref={inputRef}
+          type="text"
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
             updateCursorPos();
-          }
-          if (e.ctrlKey && e.key === 'a') {
-            updateCursorPos();
-          }
-        }}
-        onClick={updateCursorPos}
-        placeholder=""
-        autoFocus
-        spellCheck={false}
-        style={{
-          width: "400px",
-          height: "35px",
-          borderRadius: "3px",
-          border: `1px solid ${colors.border}`,
-          padding: "0 10px",
-          fontSize: "16px",
-          fontFamily: "Consolas, 'Courier New', monospace",
-          outline: "none",
-          backgroundColor: colors.background,
-          color: colors.text,
-          caretColor: "transparent",
-        }}
-      />
-      {!hasSelection && (
-        <div
+          }}
+          onSelect={updateCursorPos}
+          onKeyDown={(e) => {
+            if (
+              e.key === "ArrowLeft" ||
+              e.key === "ArrowRight" ||
+              e.key === "Home" ||
+              e.key === "End"
+            ) {
+              updateCursorPos();
+            }
+            if (e.ctrlKey && e.key === "a") {
+              updateCursorPos();
+            }
+          }}
+          onClick={updateCursorPos}
+          placeholder=""
+          autoFocus
+          spellCheck={false}
           style={{
-            position: "absolute",
-            left: `${Math.round(
-              10 +
-              measureTextWidth(text, cursorPos) -
-              (inputRef.current?.scrollLeft || 0)
-            ) + 1}px`,
-            top: "9px",
-            width: `${getCharWidth()}px`,
-            height: "19px",
-            backgroundColor: colors.text,
-            color: colors.background,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            width: "400px",
+            height: "35px",
+            borderRadius: "4px",
+            border: `1px solid ${colors.border}`,
+            padding: "0 10px",
             fontSize: "16px",
             fontFamily: "Consolas, 'Courier New', monospace",
-            lineHeight: "19px",
+            outline: "none",
+            backgroundColor: `${colors.background}80`,
+            color: colors.text,
+            caretColor: "transparent",
           }}
-        >
-          {text[cursorPos] || ""}
-        </div>
-      )}
-    </form>
+        />
+        {!hasSelection && (
+          <div
+            style={{
+              position: "absolute",
+              left: `${
+                Math.round(
+                  10 +
+                    measureTextWidth(text, cursorPos) -
+                    (inputRef.current?.scrollLeft || 0)
+                ) + 1
+              }px`,
+              top: "9px",
+              width: `${getCharWidth()}px`,
+              height: "19px",
+              backgroundColor: colors.text,
+              color: colors.background,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "16px",
+              fontFamily: "Consolas, 'Courier New', monospace",
+              lineHeight: "19px",
+            }}
+          >
+            {text[cursorPos] || ""}
+          </div>
+        )}
+      </form>
     </>
   );
 }
