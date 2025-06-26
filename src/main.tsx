@@ -28,7 +28,7 @@ function App() {
     if (inputText.startsWith('/') && inputText.length > 1) {
       const command = inputText.slice(1);
       const match = availableCommands.find(cmd => cmd.startsWith(command));
-      setSuggestion(match ? `/${match}` : "");
+      setSuggestion(match ? match.slice(command.length) : "");
     } else {
       setSuggestion("");
     }
@@ -203,23 +203,40 @@ function App() {
             fontFamily: "Consolas, 'Courier New', monospace",
             outline: "none",
             backgroundColor: `${colors.background}80`,
-            color: colors.text,
+            color: "transparent",
             caretColor: "transparent",
             position: "relative",
-            zIndex: 1,
+            zIndex: 0,
           }}
         />
+        <div
+          style={{
+            position: "absolute",
+            left: "10px",
+            top: "9px",
+            width: "380px",
+            height: "19px",
+            fontSize: "16px",
+            fontFamily: "Consolas, 'Courier New', monospace",
+            color: colors.text,
+            pointerEvents: "none",
+            zIndex: 2,
+            lineHeight: "19px",
+          }}
+        >
+          {text}
+        </div>
         {suggestion && (
           <div
             style={{
               position: "absolute",
-              left: "10px",
+              left: `${10 + measureTextWidth(text, text.length)}px`,
               top: "9px",
               fontSize: "16px",
               fontFamily: "Consolas, 'Courier New', monospace",
               color: colors.suggestion,
               pointerEvents: "none",
-              zIndex: 0,
+              zIndex: 1,
               lineHeight: "19px",
             }}
           >
@@ -248,10 +265,10 @@ function App() {
               fontSize: "16px",
               fontFamily: "Consolas, 'Courier New', monospace",
               lineHeight: "19px",
-              zIndex: 2,
+              zIndex: 3,
             }}
           >
-            {text[cursorPos] || ""}
+            {(suggestion && cursorPos === text.length) ? suggestion[0] : (text[cursorPos] || "")}
           </div>
         )}
       </form>
