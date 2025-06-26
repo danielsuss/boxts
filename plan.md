@@ -10,10 +10,13 @@ STACK
 FRONT END
 
 - simple text box in consistent position on screen
+
+BACK END
+
 - Tauri invoke commands to send message back and forth with server
 - Tauri global hotkey handling
 
-BACK END
+SERVER
 
 - Central main orchestrating operation
 - ServerManager
