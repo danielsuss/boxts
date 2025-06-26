@@ -1,7 +1,20 @@
-# Tauri + React + Typescript
+# boxts
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A floating text-to-speech overlay application that converts your typed text into speech using AI voice synthesis.
 
-## Recommended IDE Setup
+## How it works
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- Press `Alt+Enter` anywhere on your system to open the text input overlay
+- Type your text and press Enter 
+- The text is sent to a Python backend that converts it to speech using RealtimeTTS with Coqui TTS
+- The window automatically hides after submission or when it loses focus
+
+## Features
+
+- Global hotkey activation (Alt+Enter)
+- Transparent, non-intrusive floating window
+- Custom voice cloning support
+- Auto-hide functionality
+- System tray integration
+
+Built with Tauri v2, React TypeScript, and Python.

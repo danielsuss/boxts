@@ -3,6 +3,35 @@ use tauri::{
     tray::TrayIconBuilder,
 };
 
+#[tauri::command]
+async fn process_input(text: String) -> Result<String, String> {
+    if text.starts_with('/') {
+        handle_command(&text[1..]).await
+    } else {
+        handle_text(text).await
+    }
+}
+
+async fn handle_command(command_str: &str) -> Result<String, String> {
+    let parts: Vec<&str> = command_str.split_whitespace().collect();
+    
+    if parts.is_empty() {
+        return Err("Empty command".to_string());
+    }
+    
+    let command = parts[0];
+    println!("Command: {}", command);
+    
+    match command {
+        _ => Ok(format!("Unknown command: {}", command))
+    }
+}
+
+async fn handle_text(text: String) -> Result<String, String> {
+    println!("Text: {}", text);
+    Ok("Text processed".to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -26,6 +55,7 @@ pub fn run() {
 
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![process_input])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

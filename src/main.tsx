@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
 import {
   register,
   unregister,
@@ -20,8 +21,15 @@ function App() {
     border: "#535353",
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    try {
+      await invoke("process_input", { text });
+    } catch (error) {
+      console.error("Error processing input:", error);
+    }
+    
     setText("");
     setCursorPos(0);
     // Reset input scroll position
