@@ -51,7 +51,7 @@ function App() {
 
   // Register global shortcut
   useEffect(() => {
-    const shortcut = "Ctrl+Space";
+    const shortcut = "Alt+Enter";
     
     const setupGlobalShortcut = async () => {
       try {
