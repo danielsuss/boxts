@@ -1,6 +1,7 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
+    Manager,
 };
 
 const AVAILABLE_COMMANDS: &[&str] = &["center"];
@@ -11,15 +12,15 @@ fn get_available_commands() -> Vec<String> {
 }
 
 #[tauri::command]
-async fn process_input(text: String) -> Result<String, String> {
+async fn process_input(text: String, app: tauri::AppHandle) -> Result<String, String> {
     if text.starts_with('/') {
-        handle_command(&text[1..]).await
+        handle_command(&text[1..], app).await
     } else {
         handle_text(text).await
     }
 }
 
-async fn handle_command(command_str: &str) -> Result<String, String> {
+async fn handle_command(command_str: &str, app: tauri::AppHandle) -> Result<String, String> {
     let parts: Vec<&str> = command_str.split_whitespace().collect();
     
     if parts.is_empty() {
@@ -30,7 +31,7 @@ async fn handle_command(command_str: &str) -> Result<String, String> {
     println!("Command: {}", command);
     
     match command {
-        "center" => Ok("Center command executed".to_string()),
+        "center" => center_command(app).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
@@ -38,6 +39,16 @@ async fn handle_command(command_str: &str) -> Result<String, String> {
 async fn handle_text(text: String) -> Result<String, String> {
     println!("Text: {}", text);
     Ok("Text processed".to_string())
+}
+
+async fn center_command(app: tauri::AppHandle) -> Result<String, String> {
+    let window = app.get_webview_window("main")
+        .ok_or("Failed to get main window")?;
+    
+    window.center()
+        .map_err(|e| format!("Failed to center window: {}", e))?;
+    
+    Ok("Window centered".to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
