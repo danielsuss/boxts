@@ -5,7 +5,7 @@ use tauri::{
 
 mod commands;
 
-const AVAILABLE_COMMANDS: &[&str] = &["center"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -33,6 +33,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle) -> Result<Stri
     
     match command {
         "center" => commands::center_command(app).await,
+        "exit" => commands::exit_command(app).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }

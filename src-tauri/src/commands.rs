@@ -9,3 +9,9 @@ pub async fn center_command(app: tauri::AppHandle) -> Result<String, String> {
     
     Ok("Window centered".to_string())
 }
+
+pub async fn exit_command(app: tauri::AppHandle) -> Result<String, String> {
+    app.cleanup_before_exit();
+    app.exit(0);
+    Ok("Application exited".to_string())
+}
