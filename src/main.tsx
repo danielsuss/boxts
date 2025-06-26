@@ -200,15 +200,29 @@ function App() {
           }}
           onSelect={updateCursorPos}
           onKeyDown={(e) => {
-            if (
+            if (e.key === "Tab") {
+              e.preventDefault();
+              if (suggestion) {
+                const fullCommand = `/${text.slice(1)}${suggestion}`;
+                setText(fullCommand);
+                setSuggestion("");
+                updateSuggestion(fullCommand);
+                setTimeout(() => {
+                  if (inputRef.current) {
+                    const newPos = fullCommand.length;
+                    inputRef.current.setSelectionRange(newPos, newPos);
+                    setCursorPos(newPos);
+                  }
+                }, 0);
+              }
+            } else if (
               e.key === "ArrowLeft" ||
               e.key === "ArrowRight" ||
               e.key === "Home" ||
               e.key === "End"
             ) {
               updateCursorPos();
-            }
-            if (e.ctrlKey && e.key === "a") {
+            } else if (e.ctrlKey && e.key === "a") {
               updateCursorPos();
             }
           }}
