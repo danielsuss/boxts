@@ -1,10 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { register, unregister, isRegistered } from "@tauri-apps/plugin-global-shortcut";
 
 function App() {
   const [text, setText] = useState("");
   const [cursorPos, setCursorPos] = useState(0);
   const [hasSelection, setHasSelection] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Color scheme
@@ -16,7 +19,6 @@ function App() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Text:", text);
     setText("");
     setCursorPos(0);
   };
@@ -47,6 +49,54 @@ function App() {
     return Math.round(getCanvasContext().measureText("A").width);
   };
 
+  // Register global shortcut
+  useEffect(() => {
+    const shortcut = "Ctrl+Space";
+    
+    const setupGlobalShortcut = async () => {
+      try {
+        // Unregister if already registered (for hot reloads)
+        if (await isRegistered(shortcut)) {
+          await unregister(shortcut);
+        }
+        
+        await register(shortcut, (event) => {
+          if (event.state === 'Pressed') {
+            setIsVisible(prev => !prev);
+          }
+        });
+        
+      } catch (error) {
+        console.error("Failed to register global shortcut:", error);
+      }
+    };
+    
+    setupGlobalShortcut();
+
+    return () => {
+      unregister(shortcut).catch(console.error);
+    };
+  }, []);
+
+  // Handle window visibility changes
+  useEffect(() => {
+    const window = getCurrentWindow();
+    
+    const updateWindowVisibility = async () => {
+      try {
+        if (isVisible) {
+          await window.show();
+          await window.setFocus();
+        } else {
+          await window.hide();
+        }
+      } catch (error) {
+        console.error("Failed to update window visibility:", error);
+      }
+    };
+    
+    updateWindowVisibility();
+  }, [isVisible]);
 
   return (
     <>
