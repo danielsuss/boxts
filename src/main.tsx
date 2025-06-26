@@ -7,7 +7,6 @@ function App() {
   const [text, setText] = useState("");
   const [cursorPos, setCursorPos] = useState(0);
   const [hasSelection, setHasSelection] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Color scheme
@@ -49,9 +48,10 @@ function App() {
     return Math.round(getCanvasContext().measureText("A").width);
   };
 
-  // Register global shortcut
+  // Register global shortcut and window focus handling
   useEffect(() => {
     const shortcut = "Alt+Enter";
+    const window = getCurrentWindow();
     
     const setupGlobalShortcut = async () => {
       try {
@@ -60,9 +60,15 @@ function App() {
           await unregister(shortcut);
         }
         
-        await register(shortcut, (event) => {
+        await register(shortcut, async (event) => {
           if (event.state === 'Pressed') {
-            setIsVisible(prev => !prev);
+            const isVisible = await window.isVisible();
+            if (isVisible) {
+              await window.hide();
+            } else {
+              await window.show();
+              await window.setFocus();
+            }
           }
         });
         
@@ -71,32 +77,36 @@ function App() {
       }
     };
     
-    setupGlobalShortcut();
-
-    return () => {
-      unregister(shortcut).catch(console.error);
-    };
-  }, []);
-
-  // Handle window visibility changes
-  useEffect(() => {
-    const window = getCurrentWindow();
-    
-    const updateWindowVisibility = async () => {
+    const setupFocusHandler = async () => {
       try {
-        if (isVisible) {
-          await window.show();
-          await window.setFocus();
-        } else {
-          await window.hide();
-        }
+        // Hide window when it loses focus
+        const unlistenBlur = await window.onFocusChanged(({ payload: focused }) => {
+          if (!focused) {
+            window.hide().catch(console.error);
+          }
+        });
+        
+        return unlistenBlur;
       } catch (error) {
-        console.error("Failed to update window visibility:", error);
+        console.error("Failed to setup focus handler:", error);
+        return () => {};
       }
     };
     
-    updateWindowVisibility();
-  }, [isVisible]);
+    setupGlobalShortcut();
+    let unlistenFocus: (() => void) | undefined;
+    
+    setupFocusHandler().then(unlisten => {
+      unlistenFocus = unlisten;
+    });
+
+    return () => {
+      unregister(shortcut).catch(console.error);
+      if (unlistenFocus) {
+        unlistenFocus();
+      }
+    };
+  }, []);
 
   return (
     <>
