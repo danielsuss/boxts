@@ -34,20 +34,7 @@ pnpm-debug.log*
 
 # Tauri
 src-tauri/target
-
-# Python environments
-env_realtimetts/
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Audio and model files
-*.wav
-*.mp3
-models/
-
-# Generated files  
-# (removed *.json - too broad, was ignoring config files)
+src-tauri/gen
 
 # Claude
 .claude/
