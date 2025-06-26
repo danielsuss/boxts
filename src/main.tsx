@@ -7,6 +7,13 @@ function App() {
   const [hasSelection, setHasSelection] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Color scheme
+  const colors = {
+    background: "#131313",
+    text: "#c4c4c4",
+    border: "#535353",
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Text:", text);
@@ -25,55 +32,71 @@ function App() {
     }, 0);
   };
 
-  const measureTextWidth = (text: string, pos: number) => {
+  const getCanvasContext = () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d")!;
     ctx.font = '16px Consolas, "Courier New", monospace';
-    return ctx.measureText(text.slice(0, pos)).width;
+    return ctx;
+  };
+
+  const measureTextWidth = (text: string, pos: number) => {
+    return getCanvasContext().measureText(text.slice(0, pos)).width;
   };
 
   const getCharWidth = () => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d")!;
-    ctx.font = '16px Consolas, "Courier New", monospace';
-    return ctx.measureText("M").width; // Use 'M' as it's typically the widest character
+    return getCanvasContext().measureText("M").width;
   };
 
-  const getFontHeight = () => {
-    return 19;
-  };
+  const fontHeight = 19;
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        background: "transparent",
-        margin: 0,
-        padding: 0,
-        position: "relative",
-      }}
-    >
+    <>
+      <style>
+        {`
+          input::selection {
+            background-color: ${colors.text};
+            color: ${colors.background};
+          }
+        `}
+      </style>
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          background: "transparent",
+          margin: 0,
+          padding: 0,
+          position: "relative",
+        }}
+      >
       <input
         ref={inputRef}
         type="text"
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value);
+          updateCursorPos();
+        }}
         onSelect={updateCursorPos}
-        onKeyDown={updateCursorPos}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
+            updateCursorPos();
+          }
+        }}
         onClick={updateCursorPos}
-        placeholder="Enter text..."
+        placeholder=""
         autoFocus
+        spellCheck={false}
         style={{
           width: "400px",
-          height: "50px",
-          borderRadius: "25px",
-          border: "2px solid #94a3b8",
-          padding: "0 20px",
+          height: "35px",
+          borderRadius: "3px",
+          border: `1px solid ${colors.border}`,
+          padding: "0 10px",
           fontSize: "16px",
           fontFamily: "Consolas, 'Courier New', monospace",
           outline: "none",
-          backgroundColor: "#020817",
-          color: "#94a3b8",
+          backgroundColor: colors.background,
+          color: colors.text,
           caretColor: "transparent",
         }}
       />
@@ -81,13 +104,18 @@ function App() {
         <div
           style={{
             position: "absolute",
-            left: `${20 + measureTextWidth(text, cursorPos) + 1}px`,
+            left: `${
+              10 +
+              measureTextWidth(text, cursorPos) -
+              (inputRef.current?.scrollLeft || 0)
+            }px`,
             top: "50%",
-            transform: "translateY(calc(-50% + 1px))",
+            transform: "translateY(-50%)",
+            lineHeight: "1",
             width: `${getCharWidth()}px`,
-            height: `${getFontHeight()}px`,
-            backgroundColor: "#94a3b8",
-            color: "#020817",
+            height: `${fontHeight}px`,
+            backgroundColor: colors.text,
+            color: colors.background,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -99,6 +127,7 @@ function App() {
         </div>
       )}
     </form>
+    </>
   );
 }
 
