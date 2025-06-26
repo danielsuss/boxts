@@ -19,7 +19,8 @@
         "decorations": false,
         "transparent": true,
         "shadow": false,
-        "titleBarStyle": "Transparent"
+        "titleBarStyle": "Transparent",
+        "skipTaskbar": true
       }
     ],
     "security": {

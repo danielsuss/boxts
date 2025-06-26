@@ -153,6 +153,7 @@ function App() {
           placeholder=""
           autoFocus
           spellCheck={false}
+          onContextMenu={(e) => e.preventDefault()}
           style={{
             width: "400px",
             height: "35px",
