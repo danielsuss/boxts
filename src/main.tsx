@@ -14,6 +14,8 @@ function App() {
   const [hasSelection, setHasSelection] = useState(false);
   const [availableCommands, setAvailableCommands] = useState<string[]>([]);
   const [suggestion, setSuggestion] = useState("");
+  const [showErrorCursor, setShowErrorCursor] = useState(false);
+  const [animateCursor, setAnimateCursor] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Color scheme
@@ -35,8 +37,30 @@ function App() {
     }
   };
 
+  const isTextError = () => {
+    if (text.startsWith("/") && text.length > 1) {
+      const hasMultipleSlashes = text.slice(1).includes("/");
+      if (hasMultipleSlashes) {
+        return true;
+      }
+
+      const command = text.slice(1).split(" ")[0];
+      const isValidCommand = availableCommands.includes(command);
+      return !suggestion && !isValidCommand;
+    }
+    return false;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isTextError()) {
+      setShowErrorCursor(true);
+      setAnimateCursor(true);
+      setTimeout(() => setAnimateCursor(false), 50);
+      setTimeout(() => setShowErrorCursor(false), 500);
+      return;
+    }
 
     try {
       await invoke("process_input", { text });
@@ -200,7 +224,10 @@ function App() {
           }}
           onSelect={updateCursorPos}
           onKeyDown={(e) => {
-            if (e.key === "Tab") {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSubmit(e);
+            } else if (e.key === "Tab") {
               e.preventDefault();
               if (suggestion) {
                 const fullCommand = `/${text.slice(1)}${suggestion}`;
@@ -244,21 +271,7 @@ function App() {
             fontFamily: "Consolas, 'Courier New', monospace",
             outline: "none",
             backgroundColor: "transparent",
-            color: (() => {
-              if (text.startsWith("/") && text.length > 1) {
-                // Check for multiple slashes
-                const hasMultipleSlashes = text.slice(1).includes('/');
-                if (hasMultipleSlashes) {
-                  return colors.error;
-                }
-                
-                const command = text.slice(1).split(' ')[0];
-                const isValidCommand = availableCommands.includes(command);
-                const showError = !suggestion && !isValidCommand;
-                return showError ? colors.error : colors.text;
-              }
-              return colors.text;
-            })(),
+            color: isTextError() ? colors.error : colors.text,
             caretColor: "transparent",
             zIndex: 2,
           }}
@@ -294,7 +307,7 @@ function App() {
               top: "8px",
               width: `${getCharWidth()}px`,
               height: "19px",
-              backgroundColor: colors.text,
+              backgroundColor: showErrorCursor ? colors.error : colors.text,
               color: colors.background,
               display: "flex",
               alignItems: "center",
@@ -303,6 +316,8 @@ function App() {
               fontFamily: "Consolas, 'Courier New', monospace",
               lineHeight: "19px",
               zIndex: 3,
+              transform: animateCursor ? "scale(1.2)" : "scale(1)",
+              transition: "transform 0.05s ease-out",
             }}
           >
             {suggestion && cursorPos === text.length
