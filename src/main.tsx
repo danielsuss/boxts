@@ -40,14 +40,12 @@ function App() {
   };
 
   const measureTextWidth = (text: string, pos: number) => {
-    return getCanvasContext().measureText(text.slice(0, pos)).width;
+    return Math.round(getCanvasContext().measureText(text.slice(0, pos)).width);
   };
 
   const getCharWidth = () => {
-    return getCanvasContext().measureText("M").width;
+    return Math.round(getCanvasContext().measureText("A").width);
   };
-
-  const fontHeight = 19;
 
   return (
     <>
@@ -81,6 +79,9 @@ function App() {
           if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
             updateCursorPos();
           }
+          if (e.ctrlKey && e.key === 'a') {
+            updateCursorPos();
+          }
         }}
         onClick={updateCursorPos}
         placeholder=""
@@ -104,16 +105,14 @@ function App() {
         <div
           style={{
             position: "absolute",
-            left: `${
+            left: `${Math.round(
               10 +
               measureTextWidth(text, cursorPos) -
               (inputRef.current?.scrollLeft || 0)
-            }px`,
-            top: "50%",
-            transform: "translateY(-50%)",
-            lineHeight: "1",
+            ) + 1}px`,
+            top: "9px",
             width: `${getCharWidth()}px`,
-            height: `${fontHeight}px`,
+            height: "19px",
             backgroundColor: colors.text,
             color: colors.background,
             display: "flex",
@@ -121,6 +120,7 @@ function App() {
             justifyContent: "center",
             fontSize: "16px",
             fontFamily: "Consolas, 'Courier New', monospace",
+            lineHeight: "19px",
           }}
         >
           {text[cursorPos] || ""}
