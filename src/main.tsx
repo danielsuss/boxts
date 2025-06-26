@@ -22,6 +22,7 @@ function App() {
     text: "#c4c4c4",
     border: "#535353",
     suggestion: "#90EE90",
+    error: "#FF6B6B",
   };
 
   const updateSuggestion = (inputText: string) => {
@@ -218,7 +219,12 @@ function App() {
             height: "19px",
             fontSize: "16px",
             fontFamily: "Consolas, 'Courier New', monospace",
-            color: colors.text,
+            color: (() => {
+              const command = text.slice(1);
+              const isValidCommand = availableCommands.includes(command);
+              const showError = text.startsWith('/') && text.length > 1 && !suggestion && !isValidCommand;
+              return showError ? colors.error : colors.text;
+            })(),
             pointerEvents: "none",
             zIndex: 2,
             lineHeight: "19px",
