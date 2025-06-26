@@ -1,3 +1,18 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+dist-ssr
+*.local
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 # Logs
 logs
 *.log
@@ -5,41 +20,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
-
-# Dependencies
-node_modules
-dist
-dist-ssr
-*.local
-
-# Build outputs
-/target
-/src-tauri/target
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env_*/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# AI/ML Models
-models/
-*.pth
-*.onnx
-*.tflite
-*.pb
-
-# Audio files (project-specific)
-*.wav
-*.mp3
-*.json
 
 # Editor directories and files
 .vscode/*
@@ -52,15 +32,22 @@ models/
 *.sln
 *.sw?
 
-# OS generated files
-Thumbs.db
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
+# Tauri
+src-tauri/target
 
-# Temporary files
-*.tmp
-*.temp
+# Python environments
+env_realtimetts/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Audio and model files
+*.wav
+*.mp3
+models/
+
+# Generated files
+*.json
+
+# Claude
+.claude/
