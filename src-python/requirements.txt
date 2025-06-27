@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+--index-url https://download.pytorch.org/whl/cu124
+torch
+torchaudio
+--index-url https://pypi.org/simple/
+git+https://github.com/danielsuss/RealtimeTTS

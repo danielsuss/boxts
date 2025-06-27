@@ -8,6 +8,7 @@ use std::sync::Mutex;
 
 mod commands;
 mod config;
+mod setup;
 mod utils;
 
 struct AppState {
@@ -114,12 +115,20 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            // Apply config after app setup
+            // Apply config and check setup after app setup
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let state = app_handle.state::<AppState>();
                 if let Err(e) = config::apply_config(app_handle.clone(), state).await {
                     eprintln!("Failed to apply config on startup: {}", e);
+                }
+                
+                // Check if Python setup is needed
+                if !setup::is_setup_complete() {
+                    println!("Python environment not found, running setup...");
+                    if let Err(e) = setup::run_setup().await {
+                        eprintln!("Failed to run Python setup: {}", e);
+                    }
                 }
             });
 
