@@ -16,6 +16,7 @@ pub struct WindowConfig {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TTSConfig {
+    pub output_device: String,
 }
 
 impl Default for BoxtsConfig {
@@ -26,6 +27,7 @@ impl Default for BoxtsConfig {
                 monitor_id: 0,
             },
             tts: TTSConfig {
+                output_device: "Default".to_string(),
             },
         }
     }
@@ -77,6 +79,13 @@ pub fn set_window_position(state: &State<crate::AppState>, position: &str) -> Re
 pub fn set_monitor_id(state: &State<crate::AppState>, monitor_id: u32) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = state.config.lock().unwrap();
     config.window.monitor_id = monitor_id;
+    save_config(&config).map_err(|e| format!("Failed to save config: {}", e))?;
+    Ok(())
+}
+
+pub fn set_output_device(state: &State<crate::AppState>, device_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = state.config.lock().unwrap();
+    config.tts.output_device = device_name.to_string();
     save_config(&config).map_err(|e| format!("Failed to save config: {}", e))?;
     Ok(())
 }

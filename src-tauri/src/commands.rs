@@ -57,9 +57,10 @@ pub async fn resetconfig_command(app: tauri::AppHandle, state: State<'_, AppStat
     Ok("Config reset to defaults".to_string())
 }
 
-pub async fn outputdevice_command(argument: Option<String>) -> Result<String, String> {
+pub async fn outputdevice_command(argument: Option<String>, state: State<'_, crate::AppState>) -> Result<String, String> {
     match argument {
         Some(device_name) => {
+            let _ = config::set_output_device(&state, &device_name);
             println!("Selected output device: {}", device_name);
             Ok(format!("Output device set to: {}", device_name))
         },

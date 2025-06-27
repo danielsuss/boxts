@@ -61,7 +61,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "bottomleft" => commands::bottomleft_command(app, state).await,
         "bottomright" => commands::bottomright_command(app, state).await,
         "resetconfig" => commands::resetconfig_command(app, state).await,
-        "outputdevice" => commands::outputdevice_command(argument).await,
+        "outputdevice" => commands::outputdevice_command(argument, state).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
