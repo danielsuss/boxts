@@ -1,6 +1,6 @@
 # boxts
 
-A floating text-to-speech overlay application that converts your typed text into speech using.
+A floating text-to-speech overlay application that converts your typed text into speech.
 
 ## How it works
 
