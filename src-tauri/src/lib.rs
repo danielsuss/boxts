@@ -6,6 +6,7 @@ use tauri::{
 use std::sync::Mutex;
 
 mod commands;
+mod config;
 
 #[derive(Debug, Clone)]
 enum WindowPosition {
@@ -19,6 +20,7 @@ enum WindowPosition {
 
 struct AppState {
     window_position: Mutex<WindowPosition>,
+    config: Mutex<config::BoxtsConfig>,
 }
 
 const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright"];
@@ -72,6 +74,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(AppState {
             window_position: Mutex::new(WindowPosition::FreePos),
+            config: Mutex::new(config::load_config().unwrap_or_default()),
         })
         .setup(|app| {
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;

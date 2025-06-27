@@ -1,5 +1,5 @@
 use tauri::{Manager, PhysicalPosition, Position, State};
-use crate::{AppState, WindowPosition};
+use crate::{AppState, WindowPosition, config};
 
 pub async fn center_command(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     let window = app.get_webview_window("main")
@@ -9,6 +9,13 @@ pub async fn center_command(app: tauri::AppHandle, state: State<'_, AppState>) -
         .map_err(|e| format!("Failed to center window: {}", e))?;
     
     *state.window_position.lock().unwrap() = WindowPosition::Center;
+    
+    // Save to config
+    {
+        let mut config = state.config.lock().unwrap();
+        config.window.position = "center".to_string();
+        let _ = config::save_config(&config);
+    }
     
     Ok("Window centered".to_string())
 }
@@ -90,6 +97,13 @@ pub async fn topleft_command(app: tauri::AppHandle, state: State<'_, AppState>) 
     
     *state.window_position.lock().unwrap() = WindowPosition::TopLeft;
     
+    // Save to config
+    {
+        let mut config = state.config.lock().unwrap();
+        config.window.position = "topleft".to_string();
+        let _ = config::save_config(&config);
+    }
+    
     Ok("Window moved to top-left".to_string())
 }
 
@@ -115,6 +129,13 @@ pub async fn topright_command(app: tauri::AppHandle, state: State<'_, AppState>)
         .map_err(|e| format!("Failed to set window position: {}", e))?;
     
     *state.window_position.lock().unwrap() = WindowPosition::TopRight;
+    
+    // Save to config
+    {
+        let mut config = state.config.lock().unwrap();
+        config.window.position = "topright".to_string();
+        let _ = config::save_config(&config);
+    }
     
     Ok("Window moved to top-right".to_string())
 }
@@ -142,6 +163,13 @@ pub async fn bottomleft_command(app: tauri::AppHandle, state: State<'_, AppState
     
     *state.window_position.lock().unwrap() = WindowPosition::BottomLeft;
     
+    // Save to config
+    {
+        let mut config = state.config.lock().unwrap();
+        config.window.position = "bottomleft".to_string();
+        let _ = config::save_config(&config);
+    }
+    
     Ok("Window moved to bottom-left".to_string())
 }
 
@@ -167,6 +195,13 @@ pub async fn bottomright_command(app: tauri::AppHandle, state: State<'_, AppStat
         .map_err(|e| format!("Failed to set window position: {}", e))?;
     
     *state.window_position.lock().unwrap() = WindowPosition::BottomRight;
+    
+    // Save to config
+    {
+        let mut config = state.config.lock().unwrap();
+        config.window.position = "bottomright".to_string();
+        let _ = config::save_config(&config);
+    }
     
     Ok("Window moved to bottom-right".to_string())
 }
