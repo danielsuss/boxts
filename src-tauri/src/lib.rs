@@ -1,29 +1,20 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
+    Manager,
     State,
 };
 use std::sync::Mutex;
 
 mod commands;
 mod config;
-
-#[derive(Debug, Clone)]
-enum WindowPosition {
-    FreePos,
-    Center,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-}
+mod utils;
 
 struct AppState {
-    window_position: Mutex<WindowPosition>,
     config: Mutex<config::BoxtsConfig>,
 }
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -35,7 +26,6 @@ async fn process_input(text: String, app: tauri::AppHandle, state: State<'_, App
     if text.starts_with('/') {
         handle_command(&text[1..], app, state).await
     } else {
-        *state.window_position.lock().unwrap() = WindowPosition::FreePos;
         handle_text(text).await
     }
 }
@@ -58,6 +48,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "topright" => commands::topright_command(app, state).await,
         "bottomleft" => commands::bottomleft_command(app, state).await,
         "bottomright" => commands::bottomright_command(app, state).await,
+        "resetconfig" => commands::resetconfig_command(app, state).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
@@ -73,7 +64,6 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .manage(AppState {
-            window_position: Mutex::new(WindowPosition::FreePos),
             config: Mutex::new(config::load_config().unwrap_or_default()),
         })
         .setup(|app| {
@@ -89,6 +79,15 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+
+            // Apply config after app setup
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state = app_handle.state::<AppState>();
+                if let Err(e) = config::apply_config(app_handle.clone(), state).await {
+                    eprintln!("Failed to apply config on startup: {}", e);
+                }
+            });
 
             Ok(())
         })
