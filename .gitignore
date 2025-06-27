@@ -38,3 +38,6 @@ src-tauri/gen
 
 # Claude
 .claude/
+
+# Python
+venv
