@@ -11,6 +11,7 @@ pub struct BoxtsConfig {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct WindowConfig {
     pub position: String,
+    pub monitor_id: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -22,6 +23,7 @@ impl Default for BoxtsConfig {
         Self {
             window: WindowConfig {
                 position: "topleft".to_string(),
+                monitor_id: 0,
             },
             tts: TTSConfig {
             },
@@ -47,6 +49,10 @@ pub fn save_config(config: &BoxtsConfig) -> Result<(), confy::ConfyError> {
 
 pub async fn apply_ui_config(app: tauri::AppHandle, state: State<'_, crate::AppState>) -> Result<WindowConfig, Box<dyn std::error::Error>> {
     let config = load_config()?;
+    // Switch to the saved monitor first
+    let (_switch_result, new_monitor_id) = crate::utils::switch_to_monitor(app.clone(), config.window.monitor_id).await?;
+    let _ = set_monitor_id(&state, new_monitor_id);
+    // Then apply the saved position
     crate::utils::apply_window_position(app, state, &config.window.position).await?;
     Ok(config.window)
 }
@@ -64,6 +70,13 @@ pub fn get_window_position(state: &State<crate::AppState>) -> String {
 pub fn set_window_position(state: &State<crate::AppState>, position: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = state.config.lock().unwrap();
     config.window.position = position.to_string();
+    save_config(&config).map_err(|e| format!("Failed to save config: {}", e))?;
+    Ok(())
+}
+
+pub fn set_monitor_id(state: &State<crate::AppState>, monitor_id: u32) -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = state.config.lock().unwrap();
+    config.window.monitor_id = monitor_id;
     save_config(&config).map_err(|e| format!("Failed to save config: {}", e))?;
     Ok(())
 }

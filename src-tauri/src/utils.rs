@@ -105,20 +105,19 @@ pub async fn move_window_bottomright(app: tauri::AppHandle) -> Result<(), String
     Ok(())
 }
 
-pub async fn switch_to_next_monitor(app: tauri::AppHandle) -> Result<String, String> {
+pub async fn switch_to_next_monitor(app: tauri::AppHandle) -> Result<(String, u32), String> {
     let window = app.get_webview_window("main")
         .ok_or("Failed to get main window")?;
     
     let current_monitor = window.current_monitor()
         .map_err(|e| format!("Failed to get current monitor: {}", e))?
         .ok_or("No current monitor detected")?;
-    let current_pos = window.outer_position()
-        .map_err(|e| format!("Failed to get window position: {}", e))?;
+    
     let all_monitors = app.available_monitors()
         .map_err(|e| format!("Failed to get available monitors: {}", e))?;
     
     if all_monitors.len() <= 1 {
-        return Ok("Only one monitor available".to_string());
+        return Ok(("Only one monitor available".to_string(), 0));
     }
     
     let current_idx = all_monitors.iter().position(|m| 
@@ -126,23 +125,47 @@ pub async fn switch_to_next_monitor(app: tauri::AppHandle) -> Result<String, Str
     ).ok_or("Current monitor not found in available monitors")?;
     
     let next_idx = (current_idx + 1) % all_monitors.len();
-    let next_monitor = &all_monitors[next_idx];
+    let next_monitor_id = next_idx as u32;
     
-    let current_monitor_pos = current_monitor.position();
-    let relative_x = current_pos.x - current_monitor_pos.x;
-    let relative_y = current_pos.y - current_monitor_pos.y;
+    // Use switch_to_monitor to handle the actual switching
+    let (switch_result, new_monitor_id) = switch_to_monitor(app, next_monitor_id).await?;
     
-    let next_monitor_pos = next_monitor.position();
-    let new_pos = PhysicalPosition::new(
-        next_monitor_pos.x + relative_x,
-        next_monitor_pos.y + relative_y
+    Ok((switch_result, new_monitor_id))
+}
+
+
+pub async fn switch_to_monitor(app: tauri::AppHandle, monitor_id: u32) -> Result<(String, u32), String> {
+    let all_monitors = app.available_monitors()
+        .map_err(|e| format!("Failed to get available monitors: {}", e))?;
+    
+    let target_monitor = if let Some(monitor) = all_monitors.get(monitor_id as usize) {
+        monitor.clone()
+    } else {
+        all_monitors.get(0)
+            .ok_or("No monitors available")?
+            .clone()
+    };
+
+    let target_monitor_idx = all_monitors.iter().position(|m| 
+        m.name() == target_monitor.name()
+    ).unwrap();
+
+    let target_monitor_id = target_monitor_idx as u32;
+    
+    let window = app.get_webview_window("main")
+        .ok_or("Failed to get main window")?;
+
+    let work_area = target_monitor.work_area();
+    let center_pos = PhysicalPosition::new(
+        work_area.position.x + work_area.size.width as i32 / 2,
+        work_area.position.y + work_area.size.height as i32 / 2
     );
     
-    window.set_position(Position::Physical(new_pos))
-        .map_err(|e| format!("Failed to set window position: {}", e))?;
+    window.set_position(Position::Physical(center_pos))
+        .map_err(|e| format!("Failed to move to target monitor: {}", e))?;
     
-    Ok(format!("Moved to monitor: {}", 
-        next_monitor.name().map_or("Unknown", |v| v)))
+    Ok((format!("Switched to monitor: {}", 
+        target_monitor.name().map_or("Unknown", |v| v)), target_monitor_id))
 }
 
 pub async fn apply_window_position(app: tauri::AppHandle, _state: State<'_, AppState>, position: &str) -> Result<String, String> {
