@@ -14,7 +14,7 @@ struct AppState {
     config: Mutex<config::BoxtsConfig>,
 }
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -34,6 +34,18 @@ fn get_output_devices() -> Vec<String> {
         }
         Err(_) => vec!["No output devices found".to_string()]
     }
+}
+
+#[tauri::command]
+fn get_volume_values(state: State<AppState>) -> Vec<String> {
+    let current_volume = config::get_volume(&state);
+    let mut all_volumes: Vec<f32> = (0..=100).map(|i| i as f32 * 0.01).collect();
+    
+    if let Some(current_index) = all_volumes.iter().position(|&v| (v - current_volume).abs() < 0.001) {
+        all_volumes.rotate_left(current_index);
+    }
+    
+    all_volumes.into_iter().map(|v| format!("{:.2}", v)).collect()
 }
 
 #[tauri::command]
@@ -62,6 +74,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "bottomright" => commands::bottomright_command(app, state).await,
         "resetconfig" => commands::resetconfig_command(app, state).await,
         "outputdevice" => commands::outputdevice_command(argument, state).await,
+        "volume" => commands::volume_command(argument, state).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
@@ -103,7 +116,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices])
+        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices, get_volume_values])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

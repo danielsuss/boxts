@@ -87,9 +87,22 @@ function App() {
         setItems(result);
         setSelectedItemIndex(0);
         setCommandForItems("outputdevice");
-        setText(""); // Clear the input after activating item selection
+        setText("");
       } catch (error) {
         console.error("Error getting output devices:", error);
+      }
+      return;
+    }
+
+    if (text === "/volume") {
+      try {
+        const result = await invoke<string[]>("get_volume_values");
+        setItems(result);
+        setSelectedItemIndex(0);
+        setCommandForItems("volume");
+        setText("");
+      } catch (error) {
+        console.error("Error getting volume values:", error);
       }
       return;
     }
@@ -120,12 +133,12 @@ function App() {
       if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedItemIndex((prevIndex) =>
-          prevIndex > 0 ? prevIndex - 1 : items.length - 1
+          prevIndex < items.length - 1 ? prevIndex + 1 : 0
         );
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedItemIndex((prevIndex) =>
-          prevIndex < items.length - 1 ? prevIndex + 1 : 0
+          prevIndex > 0 ? prevIndex - 1 : items.length - 1
         );
       }
     } else {

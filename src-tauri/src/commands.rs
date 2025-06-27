@@ -67,3 +67,19 @@ pub async fn outputdevice_command(argument: Option<String>, state: State<'_, cra
         None => Err("No output device selected".to_string()),
     }
 }
+
+pub async fn volume_command(argument: Option<String>, state: State<'_, crate::AppState>) -> Result<String, String> {
+    match argument {
+        Some(volume_str) => {
+            match volume_str.parse::<f32>() {
+                Ok(volume) => {
+                    let _ = config::set_volume(&state, volume);
+                    println!("Selected volume: {}", volume);
+                    Ok(format!("Volume set to: {}", volume))
+                },
+                Err(_) => Err("Invalid volume value".to_string()),
+            }
+        },
+        None => Err("No volume selected".to_string()),
+    }
+}
