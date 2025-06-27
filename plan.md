@@ -41,3 +41,5 @@ SERVER
 /model
 /start
 /stop
+
+![alt text](setup_plan.png)

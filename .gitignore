@@ -41,3 +41,8 @@ src-tauri/gen
 
 # Python
 venv
+python-resources
+
+# Other
+plan.md
+setup_plan.png
