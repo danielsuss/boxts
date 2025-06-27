@@ -38,7 +38,6 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
     }
     
     let command = parts[0];
-    println!("Command: {}", command);
     
     match command {
         "center" => commands::center_command(app, state).await,
@@ -54,7 +53,6 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
 }
 
 async fn handle_text(text: String) -> Result<String, String> {
-    println!("Text: {}", text);
     Ok("Text processed".to_string())
 }
 
