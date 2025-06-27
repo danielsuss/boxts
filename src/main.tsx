@@ -18,6 +18,11 @@ function App() {
   const [animateCursor, setAnimateCursor] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Item selector state
+  const [items, setItems] = useState<string[]>([]);
+  const [selectedItemIndex, setSelectedItemIndex] = useState(0);
+  const [commandForItems, setCommandForItems] = useState("");
+
   // Color scheme
   const colors = {
     background: "#131313",
@@ -54,11 +59,38 @@ function App() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (items.length > 0) {
+      const selectedItem = items[selectedItemIndex];
+      const command = `/${commandForItems} ${selectedItem}`;
+      try {
+        await invoke("process_input", { text: command });
+      } catch (error) {
+        console.error("Error processing item selection:", error);
+      }
+      setItems([]);
+      setCommandForItems("");
+      setText("");
+      return;
+    }
+
     if (isTextError()) {
       setShowErrorCursor(true);
       setAnimateCursor(true);
       setTimeout(() => setAnimateCursor(false), 50);
       setTimeout(() => setShowErrorCursor(false), 500);
+      return;
+    }
+
+    if (text === "/test") {
+      try {
+        const result = await invoke<string[]>("get_test_items");
+        setItems(result);
+        setSelectedItemIndex(0);
+        setCommandForItems("test");
+        setText(""); // Clear the input after activating item selection
+      } catch (error) {
+        console.error("Error getting test items:", error);
+      }
       return;
     }
 
@@ -74,6 +106,55 @@ function App() {
     // Reset input scroll position
     if (inputRef.current) {
       inputRef.current.scrollLeft = 0;
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit(e);
+      return;
+    }
+
+    if (items.length > 0) {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedItemIndex((prevIndex) =>
+          prevIndex > 0 ? prevIndex - 1 : items.length - 1
+        );
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedItemIndex((prevIndex) =>
+          prevIndex < items.length - 1 ? prevIndex + 1 : 0
+        );
+      }
+    } else {
+      // Regular input key handling
+      if (e.key === "Tab") {
+        e.preventDefault();
+        if (suggestion) {
+          const fullCommand = `/${text.slice(1)}${suggestion}`;
+          setText(fullCommand);
+          setSuggestion("");
+          updateSuggestion(fullCommand);
+          setTimeout(() => {
+            if (inputRef.current) {
+              const newPos = fullCommand.length;
+              inputRef.current.setSelectionRange(newPos, newPos);
+              setCursorPos(newPos);
+            }
+          }, 0);
+        }
+      } else if (
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowRight" ||
+        e.key === "Home" ||
+        e.key === "End"
+      ) {
+        updateCursorPos();
+      } else if (e.ctrlKey && e.key === "a") {
+        updateCursorPos();
+      }
     }
   };
 
@@ -183,6 +264,7 @@ function App() {
       </style>
       <form
         onSubmit={handleSubmit}
+        onKeyDown={handleKeyDown}
         style={{
           background: "transparent",
           margin: 0,
@@ -213,69 +295,65 @@ function App() {
             pointerEvents: "none",
           }}
         />
-        <input
-          ref={inputRef}
-          type="text"
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            updateCursorPos();
-            updateSuggestion(e.target.value);
-          }}
-          onSelect={updateCursorPos}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleSubmit(e);
-            } else if (e.key === "Tab") {
-              e.preventDefault();
-              if (suggestion) {
-                const fullCommand = `/${text.slice(1)}${suggestion}`;
-                setText(fullCommand);
-                setSuggestion("");
-                updateSuggestion(fullCommand);
-                setTimeout(() => {
-                  if (inputRef.current) {
-                    const newPos = fullCommand.length;
-                    inputRef.current.setSelectionRange(newPos, newPos);
-                    setCursorPos(newPos);
-                  }
-                }, 0);
-              }
-            } else if (
-              e.key === "ArrowLeft" ||
-              e.key === "ArrowRight" ||
-              e.key === "Home" ||
-              e.key === "End"
-            ) {
+        {items.length > 0 ? (
+          <input
+            type="text"
+            readOnly
+            value={items[selectedItemIndex]}
+            autoFocus
+            style={{
+              position: "absolute",
+              left: "0px",
+              top: "0px",
+              width: "400px",
+              height: "35px",
+              borderRadius: "4px",
+              border: "none",
+              padding: "0 10px",
+              fontSize: "16px",
+              fontFamily: "Consolas, 'Courier New', monospace",
+              outline: "none",
+              backgroundColor: "transparent",
+              color: colors.suggestion,
+              caretColor: "transparent",
+              zIndex: 2,
+            }}
+          />
+        ) : (
+          <input
+            ref={inputRef}
+            type="text"
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
               updateCursorPos();
-            } else if (e.ctrlKey && e.key === "a") {
-              updateCursorPos();
-            }
-          }}
-          onClick={updateCursorPos}
-          placeholder=""
-          autoFocus
-          spellCheck={false}
-          onContextMenu={(e) => e.preventDefault()}
-          style={{
-            position: "absolute",
-            left: "0px",
-            top: "0px",
-            width: "400px",
-            height: "35px",
-            borderRadius: "4px",
-            border: "none",
-            padding: "0 10px",
-            fontSize: "16px",
-            fontFamily: "Consolas, 'Courier New', monospace",
-            outline: "none",
-            backgroundColor: "transparent",
-            color: isTextError() ? colors.error : colors.text,
-            caretColor: "transparent",
-            zIndex: 2,
-          }}
-        />
+              updateSuggestion(e.target.value);
+            }}
+            onSelect={updateCursorPos}
+            onClick={updateCursorPos}
+            placeholder=""
+            autoFocus
+            spellCheck={false}
+            onContextMenu={(e) => e.preventDefault()}
+            style={{
+              position: "absolute",
+              left: "0px",
+              top: "0px",
+              width: "400px",
+              height: "35px",
+              borderRadius: "4px",
+              border: "none",
+              padding: "0 10px",
+              fontSize: "16px",
+              fontFamily: "Consolas, 'Courier New', monospace",
+              outline: "none",
+              backgroundColor: "transparent",
+              color: isTextError() ? colors.error : colors.text,
+              caretColor: "transparent",
+              zIndex: 2,
+            }}
+          />
+        )}
         {suggestion && (
           <div
             style={{
@@ -293,7 +371,7 @@ function App() {
             {suggestion}
           </div>
         )}
-        {!hasSelection && (
+        {!hasSelection && items.length === 0 && (
           <div
             style={{
               position: "absolute",

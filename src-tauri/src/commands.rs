@@ -56,3 +56,13 @@ pub async fn resetconfig_command(app: tauri::AppHandle, state: State<'_, AppStat
     
     Ok("Config reset to defaults".to_string())
 }
+
+pub async fn test_command(argument: Option<String>) -> Result<String, String> {
+    match argument {
+        Some(arg) => {
+            println!("Selected item: {}", arg);
+            Ok(format!("Selected item: {}", arg))
+        },
+        None => Err("No item selected for /test command".to_string()),
+    }
+}
