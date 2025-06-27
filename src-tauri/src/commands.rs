@@ -1,4 +1,5 @@
-use tauri::State;
+use tauri::{Manager, State};
+use tauri_plugin_dialog::DialogExt;
 use crate::{AppState, config, utils};
 
 pub async fn exit_command(app: tauri::AppHandle) -> Result<String, String> {
@@ -81,5 +82,36 @@ pub async fn volume_command(argument: Option<String>, state: State<'_, crate::Ap
             }
         },
         None => Err("No volume selected".to_string()),
+    }
+}
+
+pub async fn trainmodel_command(app: tauri::AppHandle, state: State<'_, crate::AppState>) -> Result<String, String> {
+    {
+        let mut dialog_active = state.dialog_active.lock().unwrap();
+        *dialog_active = true;
+    }
+    
+    let file_path = app
+        .dialog()
+        .file()
+        .add_filter("Audio Files", &["mp3", "wav", "flac", "ogg", "m4a", "aac"])
+        .blocking_pick_file();
+    
+    {
+        let mut dialog_active = state.dialog_active.lock().unwrap();
+        *dialog_active = false;
+    }
+    
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+
+    match file_path {
+        Some(path) => {
+            println!("Selected training file: {:?}", path);
+            Ok(format!("Training file selected: {:?}", path))
+        },
+        None => Ok("File selection cancelled".to_string()),
     }
 }

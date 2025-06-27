@@ -34,3 +34,10 @@ FRONTEND
 BACKEND
 
 - save configuration - boxts.conf.toml
+
+SERVER
+
+/trainmodel
+/model
+/start
+/stop

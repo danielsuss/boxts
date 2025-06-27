@@ -12,9 +12,10 @@ mod utils;
 
 struct AppState {
     config: Mutex<config::BoxtsConfig>,
+    dialog_active: Mutex<bool>,
 }
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "trainmodel"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -49,6 +50,11 @@ fn get_volume_values(state: State<AppState>) -> Vec<String> {
 }
 
 #[tauri::command]
+fn is_dialog_active(state: State<AppState>) -> bool {
+    *state.dialog_active.lock().unwrap()
+}
+
+#[tauri::command]
 async fn process_input(text: String, app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     if text.starts_with('/') {
         handle_command(&text[1..], app, state).await
@@ -75,11 +81,12 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "resetconfig" => commands::resetconfig_command(app, state).await,
         "outputdevice" => commands::outputdevice_command(argument, state).await,
         "volume" => commands::volume_command(argument, state).await,
+        "trainmodel" => commands::trainmodel_command(app, state).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
 
-async fn handle_text(text: String) -> Result<String, String> {
+async fn handle_text(_text: String) -> Result<String, String> {
     Ok("Text processed".to_string())
 }
 
@@ -88,8 +95,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState {
             config: Mutex::new(config::load_config().unwrap_or_default()),
+            dialog_active: Mutex::new(false),
         })
         .setup(|app| {
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -116,7 +125,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices, get_volume_values])
+        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices, get_volume_values, is_dialog_active])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

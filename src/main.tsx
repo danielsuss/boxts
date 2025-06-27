@@ -218,6 +218,10 @@ function App() {
 
         await register(shortcut, async (event) => {
           if (event.state === "Pressed") {
+            const dialogActive = await invoke<boolean>("is_dialog_active");
+            if (dialogActive) {
+              return;
+            }
             const isVisible = await window.isVisible();
             if (isVisible) {
               await window.hide();
