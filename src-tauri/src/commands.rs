@@ -57,12 +57,12 @@ pub async fn resetconfig_command(app: tauri::AppHandle, state: State<'_, AppStat
     Ok("Config reset to defaults".to_string())
 }
 
-pub async fn test_command(argument: Option<String>) -> Result<String, String> {
+pub async fn outputdevice_command(argument: Option<String>) -> Result<String, String> {
     match argument {
-        Some(arg) => {
-            println!("Selected item: {}", arg);
-            Ok(format!("Selected item: {}", arg))
+        Some(device_name) => {
+            println!("Selected output device: {}", device_name);
+            Ok(format!("Output device set to: {}", device_name))
         },
-        None => Err("No item selected for /test command".to_string()),
+        None => Err("No output device selected".to_string()),
     }
 }

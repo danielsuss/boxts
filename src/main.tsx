@@ -81,15 +81,15 @@ function App() {
       return;
     }
 
-    if (text === "/test") {
+    if (text === "/outputdevice") {
       try {
-        const result = await invoke<string[]>("get_test_items");
+        const result = await invoke<string[]>("get_output_devices");
         setItems(result);
         setSelectedItemIndex(0);
-        setCommandForItems("test");
+        setCommandForItems("outputdevice");
         setText(""); // Clear the input after activating item selection
       } catch (error) {
-        console.error("Error getting test items:", error);
+        console.error("Error getting output devices:", error);
       }
       return;
     }
