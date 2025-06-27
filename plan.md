@@ -23,3 +23,14 @@ SERVER
 - InputParser ? (/ commands) - maybe in tauri side
 - TTSManager
 - DBManager
+
+27/06/25
+
+FRONTEND
+
+- implement item selector in front end
+- split main into components? - zustand?
+
+BACKEND
+
+- save configuration - boxts.conf.toml
