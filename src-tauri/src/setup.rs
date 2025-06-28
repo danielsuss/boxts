@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::io::Write;
 use std::fs::OpenOptions;
 
@@ -46,8 +46,8 @@ fn log_message(message: &str) {
 
 pub fn is_setup_complete() -> bool {
     if cfg!(debug_assertions) {
-        let venv_python = PathBuf::from("./venv/Scripts/python.exe");
-        venv_python.exists()
+        // In development, assume developers handle their own Python setup
+        true
     } else {
         let venv_python = PathBuf::from("./_up_/var/venv/Scripts/python.exe");
         venv_python.exists()
@@ -56,56 +56,14 @@ pub fn is_setup_complete() -> bool {
 
 pub async fn run_setup() -> Result<(), SetupError> {
     if cfg!(debug_assertions) {
-        run_development_setup().await
+        // In development, developers handle their own Python environment
+        log_message("Development mode: Python setup is handled by developer");
+        Ok(())
     } else {
         run_production_setup().await
     }
 }
 
-async fn run_development_setup() -> Result<(), SetupError> {
-    log_message("Running development setup...");
-    
-    // For development, assume Python is already available
-    // Just create venv if it doesn't exist
-    if !PathBuf::from("./venv").exists() {
-        log_message("Creating development venv...");
-        let output = Command::new("python")
-            .arg("-m")
-            .arg("venv")
-            .arg("./venv")
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()?;
-            
-        if !output.status.success() {
-            let error = String::from_utf8_lossy(&output.stderr);
-            log_message(&format!("ERROR: Failed to create development venv: {}", error));
-            return Err(SetupError::CommandFailed("Failed to create venv".to_string()));
-        }
-        log_message("Development venv created successfully");
-    }
-    
-    // Install requirements
-    log_message("Installing requirements...");
-    let output = Command::new("./venv/Scripts/pip.exe")
-        .arg("install")
-        .arg("-r")
-        .arg("./src-python/requirements.txt")
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()?;
-        
-    if !output.status.success() {
-        let error = String::from_utf8_lossy(&output.stderr);
-        log_message(&format!("ERROR: Failed to install requirements: {}", error));
-        return Err(SetupError::CommandFailed("Failed to install requirements".to_string()));
-    }
-    
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    log_message(&format!("Requirements installed: {}", stdout));
-    log_message("Development setup complete!");
-    Ok(())
-}
 
 async fn run_production_setup() -> Result<(), SetupError> {
     log_message("Running production setup...");
