@@ -25,6 +25,7 @@ async def speak(request: TextRequest):
 @app.post("/trainmodel")
 async def trainmodel(request: TrainModelRequest):
     server_log(f"Training model with file: {request.filepath}")
+    boxts_manager.engine = CoquiEngine(voice=request.filepath, device="cuda")
     return {"status": "success", "message": f"Training file received: {request.filepath}"}
 
 
