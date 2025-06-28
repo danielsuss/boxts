@@ -50,7 +50,30 @@ pub fn is_setup_complete() -> bool {
         true
     } else {
         let venv_python = PathBuf::from("./_up_/var/venv/Scripts/python.exe");
-        venv_python.exists()
+        venv_python.exists() && check_ffmpeg_available()
+    }
+}
+
+fn check_ffmpeg_available() -> bool {
+    match Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+    {
+        Ok(output) => {
+            if output.status.success() {
+                log_message("FFmpeg found on system");
+                true
+            } else {
+                log_message("WARNING: FFmpeg not found. Audio processing may not work properly.");
+                log_message("Please install FFmpeg: https://ffmpeg.org/download.html");
+                false
+            }
+        },
+        Err(_) => {
+            log_message("WARNING: FFmpeg not found. Audio processing may not work properly.");
+            log_message("Please install FFmpeg: https://ffmpeg.org/download.html");
+            false
+        }
     }
 }
 
@@ -149,6 +172,7 @@ async fn run_production_setup() -> Result<(), SetupError> {
     let venv_pip = venv_dir.join("Scripts/pip.exe");
     let status = Command::new(&venv_pip)
         .arg("install")
+        .arg("--no-cache-dir")
         .arg("-r")
         .arg(&requirements)
         .status()?;

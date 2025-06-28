@@ -43,6 +43,9 @@ src-tauri/gen
 venv
 python-resources
 
+# ffmpeg
+ffmpeg-resources
+
 # Other
 plan.md
 setup_plan.png

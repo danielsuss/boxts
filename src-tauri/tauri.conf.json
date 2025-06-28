@@ -39,7 +39,8 @@
     ],
     "resources": [
       "../src-python/**/*",
-      "../python-resources/runtime/**/*"
+      "../python-resources/runtime/**/*",
+      "../ffmpeg-resources/**/*"
     ]
   }
 }

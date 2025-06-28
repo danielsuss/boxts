@@ -1,8 +1,12 @@
 from fastapi import FastAPI
-from boxts_manager.py import BoxtsManager
+from boxts_manager import BoxtsManager
 from RealtimeTTS import TextToAudioStream, CoquiEngine
 import pyaudio
 import uvicorn
+from utils import setup_ffmpeg
+
+# Setup FFmpeg for audio processing
+setup_ffmpeg()
 
 app = FastAPI(title="Boxts TTS Server", version="0.1.0")
 boxts_manager = BoxtsManager()

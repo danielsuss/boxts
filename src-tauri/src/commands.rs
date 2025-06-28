@@ -1,8 +1,10 @@
 use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
-use crate::{AppState, config, utils};
+use crate::{AppState, config, utils, server_utils};
 
-pub async fn exit_command(app: tauri::AppHandle) -> Result<String, String> {
+pub async fn exit_command(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
+    // Stop server before exiting
+    server_utils::stop_server(state);
     app.cleanup_before_exit();
     app.exit(0);
     Ok("Application exited".to_string())

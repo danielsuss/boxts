@@ -1,7 +1,5 @@
 fastapi
 uvicorn
---index-url https://download.pytorch.org/whl/cu124
-torch
-torchaudio
---index-url https://pypi.org/simple/
+https://download.pytorch.org/whl/cu124/torch-2.6.0%2Bcu124-cp311-cp311-win_amd64.whl
+https://download.pytorch.org/whl/cu124/torchaudio-2.6.0%2Bcu124-cp311-cp311-win_amd64.whl
 git+https://github.com/danielsuss/RealtimeTTS

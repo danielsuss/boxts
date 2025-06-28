@@ -5,15 +5,18 @@ use tauri::{
     State,
 };
 use std::sync::Mutex;
+use std::process::Child;
 
 mod commands;
 mod config;
-mod setup;
+mod initial_setup;
+mod server_utils;
 mod utils;
 
 struct AppState {
     config: Mutex<config::BoxtsConfig>,
     dialog_active: Mutex<bool>,
+    server_process: Mutex<Option<Child>>,
 }
 
 const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "trainmodel"];
@@ -73,7 +76,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
 
     match command {
         "center" => commands::center_command(app, state).await,
-        "exit" => commands::exit_command(app).await,
+        "exit" => commands::exit_command(app, state).await,
         "nextmonitor" => commands::nextmonitor_command(app, state).await,
         "topleft" => commands::topleft_command(app, state).await,
         "topright" => commands::topright_command(app, state).await,
@@ -93,6 +96,15 @@ async fn handle_text(_text: String) -> Result<String, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Run setup first, before creating any UI
+    if !initial_setup::is_setup_complete() {
+        println!("Python environment not found, running setup...");
+        if let Err(e) = tauri::async_runtime::block_on(initial_setup::run_setup()) {
+            eprintln!("Failed to run Python setup: {}", e);
+            std::process::exit(1);
+        }
+    }
+    
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
@@ -100,6 +112,7 @@ pub fn run() {
         .manage(AppState {
             config: Mutex::new(config::load_config().unwrap_or_default()),
             dialog_active: Mutex::new(false),
+            server_process: Mutex::new(None),
         })
         .setup(|app| {
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -110,27 +123,42 @@ pub fn run() {
                 .menu(&menu)
                 .on_menu_event(|app, event| {
                     if event.id() == "quit" {
+                        let state = app.state::<AppState>();
+                        server_utils::stop_server(state);
                         app.exit(0);
                     }
                 })
                 .build(app)?;
 
-            // Apply config and check setup after app setup
+            // Apply config after window setup
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let state = app_handle.state::<AppState>();
-                if let Err(e) = config::apply_config(app_handle.clone(), state).await {
+                if let Err(e) = config::apply_config(app_handle.clone(), state.clone()).await {
                     eprintln!("Failed to apply config on startup: {}", e);
                 }
-                
-                // Check if Python setup is needed
-                if !setup::is_setup_complete() {
-                    println!("Python environment not found, running setup...");
-                    if let Err(e) = setup::run_setup().await {
-                        eprintln!("Failed to run Python setup: {}", e);
-                    }
-                }
             });
+
+            // Start server after window is ready
+            if let Some(_window) = app.get_webview_window("main") {
+                let app_handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    if initial_setup::is_setup_complete() {
+                        println!("Starting Python server...");
+                        match server_utils::start_server() {
+                            Ok(child) => {
+                                println!("Python server started successfully");
+                                let state = app_handle.state::<AppState>();
+                                let mut server_process = state.server_process.lock().unwrap();
+                                *server_process = Some(child);
+                            },
+                            Err(e) => {
+                                eprintln!("Failed to start Python server: {}", e);
+                            }
+                        }
+                    }
+                });
+            }
 
             Ok(())
         })
