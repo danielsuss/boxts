@@ -7,9 +7,11 @@ use tauri::{
 use std::sync::Mutex;
 use std::process::Child;
 
+mod bridge;
 mod commands;
 mod config;
 mod initial_setup;
+mod log;
 mod server_utils;
 mod utils;
 
@@ -19,7 +21,7 @@ struct AppState {
     server_process: Mutex<Option<Child>>,
 }
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "trainmodel"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "trainmodel", "restartserver"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -86,19 +88,23 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "outputdevice" => commands::outputdevice_command(argument, state).await,
         "volume" => commands::volume_command(argument, state).await,
         "trainmodel" => commands::trainmodel_command(app, state).await,
+        "restartserver" => commands::restartserver_command(state).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
 
-async fn handle_text(_text: String) -> Result<String, String> {
-    Ok("Text processed".to_string())
+async fn handle_text(text: String) -> Result<String, String> {
+    match bridge::send_speak_request(text).await {
+        Ok(response) => Ok(response),
+        Err(e) => Err(format!("Failed to send text to TTS: {}", e)),
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Run setup first, before creating any UI
     if !initial_setup::is_setup_complete() {
-        println!("Python environment not found, running setup...");
+        log::tauri_log("Python environment not found, running setup...");
         if let Err(e) = tauri::async_runtime::block_on(initial_setup::run_setup()) {
             eprintln!("Failed to run Python setup: {}", e);
             std::process::exit(1);
@@ -144,10 +150,9 @@ pub fn run() {
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     if initial_setup::is_setup_complete() {
-                        println!("Starting Python server...");
                         match server_utils::start_server() {
                             Ok(child) => {
-                                println!("Python server started successfully");
+                                log::tauri_log("Python server started successfully");
                                 let state = app_handle.state::<AppState>();
                                 let mut server_process = state.server_process.lock().unwrap();
                                 *server_process = Some(child);

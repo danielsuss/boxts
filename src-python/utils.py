@@ -1,5 +1,6 @@
 import os
 import pydub
+from log import server_log
 
 def setup_ffmpeg():
     """
@@ -13,7 +14,7 @@ def setup_ffmpeg():
     is_production = "_up_" in app_dir
     
     if not is_production:
-        print("Development mode: Using system FFmpeg")
+        server_log("Development mode: Using system FFmpeg")
         return False
     
     # Production mode - setup bundled FFmpeg
@@ -28,8 +29,8 @@ def setup_ffmpeg():
         pydub.AudioSegment.ffmpeg = ffmpeg_exe
         if os.path.exists(ffprobe_exe):
             pydub.AudioSegment.ffprobe = ffprobe_exe
-        print(f"Production mode: Using bundled FFmpeg: {ffmpeg_exe}")
+        server_log(f"Production mode: Using bundled FFmpeg: {ffmpeg_exe}")
         return True
     else:
-        print("Production mode: Bundled FFmpeg not found, using system FFmpeg")
+        server_log("Production mode: Bundled FFmpeg not found, using system FFmpeg")
         return False

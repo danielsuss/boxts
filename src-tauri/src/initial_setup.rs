@@ -41,7 +41,7 @@ fn log_message(message: &str) {
             .as_secs();
         let _ = writeln!(file, "[{}] {}", timestamp, message);
     }
-    println!("{}", message);
+    crate::log::tauri_log(message);
 }
 
 pub fn is_setup_complete() -> bool {

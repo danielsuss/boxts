@@ -4,6 +4,8 @@ from RealtimeTTS import TextToAudioStream, CoquiEngine
 import pyaudio
 import uvicorn
 from utils import setup_ffmpeg
+from models import TextRequest, TrainModelRequest
+from log import server_log
 
 # Setup FFmpeg for audio processing
 setup_ffmpeg()
@@ -16,14 +18,15 @@ async def root():
     return {"message": "Boxts TTS Server is running"}
 
 @app.post("/speak")
-async def speak(text: str):
-    print(f"Received text: {text}")
-    return {"status": "success", "message": f"Processing: {text}"}
+async def speak(request: TextRequest):
+    server_log(f"Speaking text: {request.text}")
+    return {"status": "success", "message": f"Processing: {request.text}"}
 
 @app.post("/trainmodel")
-async def trainmodel(filepath: str):
-    print(f"Received training file path: {filepath}")
-    return {"status": "success", "message": f"Training file received: {filepath}"}
+async def trainmodel(request: TrainModelRequest):
+    server_log(f"Training model with file: {request.filepath}")
+    return {"status": "success", "message": f"Training file received: {request.filepath}"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

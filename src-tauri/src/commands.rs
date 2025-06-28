@@ -1,6 +1,6 @@
 use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
-use crate::{AppState, config, utils, server_utils};
+use crate::{AppState, config, utils, server_utils, bridge};
 
 pub async fn exit_command(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     // Stop server before exiting
@@ -64,7 +64,7 @@ pub async fn outputdevice_command(argument: Option<String>, state: State<'_, cra
     match argument {
         Some(device_name) => {
             let _ = config::set_output_device(&state, &device_name);
-            println!("Selected output device: {}", device_name);
+            crate::log::tauri_log(&format!("Selected output device: {}", device_name));
             Ok(format!("Output device set to: {}", device_name))
         },
         None => Err("No output device selected".to_string()),
@@ -77,7 +77,7 @@ pub async fn volume_command(argument: Option<String>, state: State<'_, crate::Ap
             match volume_str.parse::<f32>() {
                 Ok(volume) => {
                     let _ = config::set_volume(&state, volume);
-                    println!("Selected volume: {}", volume);
+                    crate::log::tauri_log(&format!("Selected volume: {}", volume));
                     Ok(format!("Volume set to: {}", volume))
                 },
                 Err(_) => Err("Invalid volume value".to_string()),
@@ -111,9 +111,32 @@ pub async fn trainmodel_command(app: tauri::AppHandle, state: State<'_, crate::A
 
     match file_path {
         Some(path) => {
-            println!("Selected training file: {:?}", path);
-            Ok(format!("Training file selected: {:?}", path))
+            let path_str = path.to_string();
+            crate::log::tauri_log(&format!("Selected training file: {:?}", path));
+            
+            // Send train model request to Python server
+            match bridge::send_train_model_request(path_str).await {
+                Ok(response) => Ok(format!("Training started: {}", response)),
+                Err(e) => Err(format!("Failed to start training: {}", e)),
+            }
         },
         None => Ok("File selection cancelled".to_string()),
+    }
+}
+
+pub async fn restartserver_command(state: State<'_, crate::AppState>) -> Result<String, String> {
+    crate::log::tauri_log("Restarting Python server...");
+    
+    // Stop the current server
+    server_utils::stop_server(state.clone());
+    
+    // Start a new server
+    match server_utils::start_server() {
+        Ok(child) => {
+            let mut server_process = state.server_process.lock().unwrap();
+            *server_process = Some(child);
+            Ok("Server restarted successfully".to_string())
+        },
+        Err(e) => Err(format!("Failed to restart server: {}", e)),
     }
 }
