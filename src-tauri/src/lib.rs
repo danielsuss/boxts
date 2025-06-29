@@ -21,7 +21,7 @@ struct AppState {
     server_process: Mutex<Option<Child>>,
 }
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "trainmodel", "restartserver"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "clonevoice", "restartserver"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -87,7 +87,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "resetconfig" => commands::resetconfig_command(app, state).await,
         "outputdevice" => commands::outputdevice_command(argument, state).await,
         "volume" => commands::volume_command(argument, state).await,
-        "trainmodel" => commands::trainmodel_command(app, state).await,
+        "clonevoice" => commands::clonevoice_command(app, state).await,
         "restartserver" => commands::restartserver_command(state).await,
         _ => Err(format!("Unknown command: {}", command))
     }
@@ -152,7 +152,6 @@ pub fn run() {
                     if initial_setup::is_setup_complete() {
                         match server_utils::start_server() {
                             Ok(child) => {
-                                log::tauri_log("Python server started successfully");
                                 let state = app_handle.state::<AppState>();
                                 let mut server_process = state.server_process.lock().unwrap();
                                 *server_process = Some(child);

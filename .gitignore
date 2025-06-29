@@ -47,6 +47,9 @@ src-python/__pycache__
 # ffmpeg
 ffmpeg-resources
 
+# TTS
+realtimetts-resources
+
 # Other
 plan.md
 setup_plan.png

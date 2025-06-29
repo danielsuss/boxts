@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class TextRequest(BaseModel):
+class SpeakRequest(BaseModel):
     text: str
 
 class TrainModelRequest(BaseModel):

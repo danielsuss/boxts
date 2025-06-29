@@ -2,23 +2,16 @@ import os
 import pydub
 from log import server_log
 
-def setup_ffmpeg():
-    """
-    Configure pydub to use bundled FFmpeg in production environment.
-    In development, developers handle their own FFmpeg installation.
-    Should be called at server startup before any audio processing.
-    """
+def is_production_environment():
     app_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Check if we're in production (bundled app with _up_ structure)
-    is_production = "_up_" in app_dir
-    
-    if not is_production:
+    return "_up_" in app_dir
+
+def setup_ffmpeg():
+    if not is_production_environment():
         server_log("Development mode: Using system FFmpeg")
         return False
     
-    # Production mode - setup bundled FFmpeg
-    # FFmpeg is bundled at same level as src-python, so go up one directory
+    app_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(app_dir)
     ffmpeg_dir = os.path.join(parent_dir, "ffmpeg-resources")
     ffmpeg_exe = os.path.join(ffmpeg_dir, "ffmpeg.exe") 

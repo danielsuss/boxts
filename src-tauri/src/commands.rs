@@ -87,7 +87,7 @@ pub async fn volume_command(argument: Option<String>, state: State<'_, crate::Ap
     }
 }
 
-pub async fn trainmodel_command(app: tauri::AppHandle, state: State<'_, crate::AppState>) -> Result<String, String> {
+pub async fn clonevoice_command(app: tauri::AppHandle, state: State<'_, crate::AppState>) -> Result<String, String> {
     {
         let mut dialog_active = state.dialog_active.lock().unwrap();
         *dialog_active = true;
@@ -112,12 +112,12 @@ pub async fn trainmodel_command(app: tauri::AppHandle, state: State<'_, crate::A
     match file_path {
         Some(path) => {
             let path_str = path.to_string();
-            crate::log::tauri_log(&format!("Selected training file: {:?}", path));
+            crate::log::tauri_log(&format!("Selected voice file for cloning: {:?}", path));
             
-            // Send train model request to Python server
-            match bridge::send_train_model_request(path_str).await {
-                Ok(response) => Ok(format!("Training started: {}", response)),
-                Err(e) => Err(format!("Failed to start training: {}", e)),
+            // Send clone voice request to Python server
+            match bridge::send_clonevoice_request(path_str).await {
+                Ok(response) => Ok(format!("Voice cloning started: {}", response)),
+                Err(e) => Err(format!("Failed to start voice cloning: {}", e)),
             }
         },
         None => Ok("File selection cancelled".to_string()),

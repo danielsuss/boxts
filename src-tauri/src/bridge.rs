@@ -7,7 +7,7 @@ struct TextPayload {
 }
 
 #[derive(Serialize)]
-struct TrainModelPayload {
+struct CloneVoicePayload {
     filepath: String,
 }
 
@@ -28,11 +28,11 @@ pub async fn send_speak_request(text: String) -> Result<String, String> {
     }
 }
 
-pub async fn send_train_model_request(filepath: String) -> Result<String, String> {
+pub async fn send_clonevoice_request(filepath: String) -> Result<String, String> {
     let client = Client::new();
-    let url = format!("{}/trainmodel", SERVER_BASE_URL);
+    let url = format!("{}/clonevoice", SERVER_BASE_URL);
     
-    let payload = TrainModelPayload { filepath };
+    let payload = CloneVoicePayload { filepath };
     
     match client.post(&url).json(&payload).send().await {
         Ok(response) => match response.text().await {
