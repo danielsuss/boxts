@@ -1,5 +1,6 @@
 use std::path::PathBuf;
-use std::process::{Command, Child};
+use std::process::{Command, Child, Stdio};
+use std::fs::OpenOptions;
 use tauri::State;
 
 pub fn get_python_paths() -> (PathBuf, PathBuf) {
@@ -20,9 +21,21 @@ pub fn start_server() -> Result<Child, std::io::Error> {
     crate::log::tauri_log("Starting Python server...");
     let (python_exe, server_script) = get_python_paths();
     
-    Command::new(python_exe)
-        .arg(server_script)
-        .spawn()
+    let mut command = Command::new(python_exe);
+    command.arg(server_script);
+    
+    // In production, redirect output to server.log
+    if !cfg!(debug_assertions) {
+        let log_file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("server.log")?;
+        
+        command.stdout(Stdio::from(log_file.try_clone()?));
+        command.stderr(Stdio::from(log_file));
+    }
+    
+    command.spawn()
 }
 
 pub fn stop_server(state: State<crate::AppState>) {
