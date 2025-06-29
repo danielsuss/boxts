@@ -1,3 +1,9 @@
+# Functions extracted from RealtimeTTS CoquiEngine:
+# - download_file() (lines 966-978)
+# - download_xtts_model() (lines 981-1010) 
+# - load_xtts_model() (adapted from load_model() lines 510-557)
+# - compute_speaker_embeddings() (adapted from get_conditioning_latents() lines 343-498)
+
 import torch
 import json
 import os
