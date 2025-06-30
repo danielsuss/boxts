@@ -29,7 +29,7 @@ def download_file(url, destination):
 
     progress_bar.close()
 
-def download_xtts_model(model_version="v2.0.2", models_base_path=None):
+def download_xtts_model(model_version="v2.0.3", models_base_path=None):
     if not models_base_path:
         models_base_path = "./models"
     
@@ -103,7 +103,7 @@ def clone_voice(audio_file_path):
     os.makedirs(models_path, exist_ok=True)
     os.makedirs(voices_path, exist_ok=True)
     
-    model_path = download_xtts_model("v2.0.2", models_path)
+    model_path = download_xtts_model("v2.0.3", models_path)
     model = load_xtts_model(model_path)
     
     voice_name = os.path.splitext(os.path.basename(audio_file_path))[0]

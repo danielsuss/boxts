@@ -81,6 +81,19 @@ function App() {
       return;
     }
 
+    if (text === "/start") {
+      try {
+        const result = await invoke<string[]>("get_voices");
+        setItems(result);
+        setSelectedItemIndex(0);
+        setCommandForItems("start");
+        setText("");
+      } catch (error) {
+        console.error("Error getting voices:", error);
+      }
+      return;
+    }
+
     if (text === "/outputdevice") {
       try {
         const result = await invoke<string[]>("get_output_devices");

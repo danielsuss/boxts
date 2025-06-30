@@ -32,6 +32,9 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
+# boxts
+boxts.conf.toml
+
 # Tauri
 src-tauri/target
 src-tauri/gen

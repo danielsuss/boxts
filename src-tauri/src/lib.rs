@@ -21,7 +21,7 @@ struct AppState {
     server_process: Mutex<Option<Child>>,
 }
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "clonevoice", "restartserver"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "clonevoice", "restartserver", "start"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -53,6 +53,47 @@ fn get_volume_values(state: State<AppState>) -> Vec<String> {
     }
     
     all_volumes.into_iter().map(|v| format!("{:.2}", v)).collect()
+}
+
+#[tauri::command]
+fn get_voices(state: State<AppState>) -> Vec<String> {
+    use std::fs;
+    
+    let voices_path = if cfg!(debug_assertions) {
+        "../realtimetts-resources/voices"
+    } else {
+        "./realtimetts-resources/voices"
+    };
+    
+    let mut voices = match fs::read_dir(voices_path) {
+        Ok(entries) => {
+            entries
+                .filter_map(|entry| entry.ok())
+                .filter_map(|entry| {
+                    let path = entry.path();
+                    if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                        path.file_name().and_then(|s| s.to_str()).map(|s| s.to_string())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<String>>()
+        }
+        Err(_) => vec!["No voices found".to_string()]
+    };
+    
+    if voices.is_empty() {
+        return vec!["No voices found".to_string()];
+    }
+    
+    // Rotate list to put current voice first
+    if let Ok(current_voice) = config::get_voice(&state) {
+        if let Some(current_index) = voices.iter().position(|v| v == &current_voice) {
+            voices.rotate_left(current_index);
+        }
+    }
+    
+    voices
 }
 
 #[tauri::command]
@@ -89,6 +130,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "volume" => commands::volume_command(argument, state).await,
         "clonevoice" => commands::clonevoice_command(app, state).await,
         "restartserver" => commands::restartserver_command(state).await,
+        "start" => commands::start_command(argument, state).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
@@ -166,7 +208,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices, get_volume_values, is_dialog_active])
+        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices, get_volume_values, get_voices, is_dialog_active])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

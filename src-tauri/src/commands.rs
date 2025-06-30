@@ -140,3 +140,20 @@ pub async fn restartserver_command(state: State<'_, crate::AppState>) -> Result<
         Err(e) => Err(format!("Failed to restart server: {}", e)),
     }
 }
+
+pub async fn start_command(argument: Option<String>, state: State<'_, crate::AppState>) -> Result<String, String> {
+    match argument {
+        Some(voice_name) => {
+            // Save the selected voice to config
+            let _ = config::set_voice(&state, &voice_name);
+            crate::log::tauri_log(&format!("Selected voice: {}", voice_name));
+            
+            // Send start request to Python server
+            match bridge::send_start_request(voice_name.clone()).await {
+                Ok(_response) => Ok(format!("TTS started with voice: {}", voice_name)),
+                Err(e) => Err(format!("Failed to start TTS: {}", e)),
+            }
+        },
+        None => Err("No voice selected".to_string()),
+    }
+}

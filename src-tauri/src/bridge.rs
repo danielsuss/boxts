@@ -11,6 +11,11 @@ struct CloneVoicePayload {
     filepath: String,
 }
 
+#[derive(Serialize)]
+struct StartPayload {
+    voice: String,
+}
+
 const SERVER_BASE_URL: &str = "http://127.0.0.1:8000";
 
 pub async fn send_speak_request(text: String) -> Result<String, String> {
@@ -33,6 +38,21 @@ pub async fn send_clonevoice_request(filepath: String) -> Result<String, String>
     let url = format!("{}/clonevoice", SERVER_BASE_URL);
     
     let payload = CloneVoicePayload { filepath };
+    
+    match client.post(&url).json(&payload).send().await {
+        Ok(response) => match response.text().await {
+            Ok(body) => Ok(body),
+            Err(_) => Err("Failed to read response body".to_string()),
+        },
+        Err(e) => Err(format!("Request failed: {}", e)),
+    }
+}
+
+pub async fn send_start_request(voice: String) -> Result<String, String> {
+    let client = Client::new();
+    let url = format!("{}/start", SERVER_BASE_URL);
+    
+    let payload = StartPayload { voice };
     
     match client.post(&url).json(&payload).send().await {
         Ok(response) => match response.text().await {

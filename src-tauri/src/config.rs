@@ -18,6 +18,7 @@ pub struct WindowConfig {
 pub struct TTSConfig {
     pub output_device: String,
     pub volume: f32,
+    pub voice: String,
 }
 
 impl Default for BoxtsConfig {
@@ -30,6 +31,7 @@ impl Default for BoxtsConfig {
             tts: TTSConfig {
                 output_device: "Default".to_string(),
                 volume: 0.5,
+                voice: "Default".to_string(),
             },
         }
     }
@@ -37,7 +39,7 @@ impl Default for BoxtsConfig {
 
 fn get_config_path() -> PathBuf {
     if cfg!(debug_assertions) {
-        PathBuf::from("boxts.conf.toml")
+        PathBuf::from("../boxts.conf.toml")
     } else {
         std::env::current_exe()
             .unwrap_or_else(|_| PathBuf::from("./boxts.exe"))
@@ -104,6 +106,18 @@ pub fn get_volume(state: &State<crate::AppState>) -> f32 {
 pub fn set_volume(state: &State<crate::AppState>, volume: f32) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = state.config.lock().unwrap();
     config.tts.volume = volume;
+    save_config(&config).map_err(|e| format!("Failed to save config: {}", e))?;
+    Ok(())
+}
+
+pub fn get_voice(state: &State<crate::AppState>) -> Result<String, Box<dyn std::error::Error>> {
+    let config = state.config.lock().unwrap();
+    Ok(config.tts.voice.clone())
+}
+
+pub fn set_voice(state: &State<crate::AppState>, voice: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = state.config.lock().unwrap();
+    config.tts.voice = voice.to_string();
     save_config(&config).map_err(|e| format!("Failed to save config: {}", e))?;
     Ok(())
 }
