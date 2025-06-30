@@ -36,11 +36,15 @@ impl Default for BoxtsConfig {
 }
 
 fn get_config_path() -> PathBuf {
-    std::env::current_exe()
-        .unwrap_or_else(|_| PathBuf::from("./boxts.exe"))
-        .parent()
-        .unwrap_or(&PathBuf::from("."))
-        .join("boxts.conf.toml")
+    if cfg!(debug_assertions) {
+        PathBuf::from("boxts.conf.toml")
+    } else {
+        std::env::current_exe()
+            .unwrap_or_else(|_| PathBuf::from("./boxts.exe"))
+            .parent()
+            .unwrap_or(&PathBuf::from("."))
+            .join("boxts.conf.toml")
+    }
 }
 
 pub fn load_config() -> Result<BoxtsConfig, confy::ConfyError> {
