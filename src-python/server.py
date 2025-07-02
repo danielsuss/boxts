@@ -5,7 +5,7 @@ import pyaudio
 import uvicorn
 import os
 from utils import setup_ffmpeg, is_production_environment
-from models import SpeakRequest, TrainModelRequest, StartRequest
+from models import SpeakRequest, TrainModelRequest, VoiceRequest
 from config import get_output_device, get_volume
 from log import server_log
 from tts_utils import clone_voice
@@ -53,10 +53,14 @@ async def clonevoice(request: TrainModelRequest):
         return {"status": "error", "message": f"Failed to clone voice: {str(e)}"}
 
 @app.post("/start")
-async def start_tts(request: StartRequest):
+async def start_tts(request: VoiceRequest):
     server_log(f"Starting TTS with voice: {request.voice}")
     
     try:
+        # Check if engine already exists
+        if boxts_manager.engine is not None:
+            server_log("TTS already started, try using /changevoice")
+            return {"status": "error", "message": "TTS already started, try using /changevoice"}
         # Get audio device configuration
         output_device_name = get_output_device()
 
@@ -175,6 +179,61 @@ async def list_devices():
     except Exception as e:
         server_log(f"Error listing devices: {str(e)}")
         return {"status": "error", "message": f"Failed to list devices: {str(e)}"}
+
+@app.post("/stop")
+async def stop_tts():
+    server_log("Stopping TTS and cleaning up resources")
+    
+    try:
+        # Stop and cleanup stream if it exists
+        if boxts_manager.stream is not None:
+            server_log("Stopping TextToAudioStream...")
+            boxts_manager.stream.stop()
+            
+            # Shutdown the engine if it exists
+            if boxts_manager.stream.engine is not None:
+                server_log("Shutting down CoquiEngine...")
+                boxts_manager.stream.engine.shutdown()
+            
+            # Clear the stream reference
+            boxts_manager.stream = None
+            server_log("TextToAudioStream cleaned up")
+        
+        # Clear engine reference
+        if boxts_manager.engine is not None:
+            server_log("Clearing engine reference...")
+            boxts_manager.engine = None
+        
+        server_log("TTS stopped and resources cleaned up successfully")
+        return {"status": "success", "message": "TTS stopped and resources cleaned up"}
+        
+    except Exception as e:
+        server_log(f"Error stopping TTS: {str(e)}")
+        return {"status": "error", "message": f"Failed to stop TTS: {str(e)}"}
+
+@app.post("/changevoice")
+async def change_voice(request: VoiceRequest):
+    server_log(f"Changing voice to: {request.voice}")
+    
+    try:
+        # Check if engine exists
+        if boxts_manager.engine is None:
+            return {"status": "error", "message": "TTS engine not started. Use /start command first."}
+        
+        # Change the voice on the existing engine
+        server_log(f"Setting voice to: {request.voice}")
+        boxts_manager.engine.set_voice(request.voice)
+
+        boxts_manager.stream.feed("YOU'RE ROCKING WITH ME NOW PRETTY BOY")
+        
+        boxts_manager.stream.play_async()
+        
+        server_log(f"Voice successfully changed to: {request.voice}")
+        return {"status": "success", "message": f"Voice changed to: {request.voice}"}
+        
+    except Exception as e:
+        server_log(f"Error changing voice: {str(e)}")
+        return {"status": "error", "message": f"Failed to change voice: {str(e)}"}
 
 
 if __name__ == "__main__":

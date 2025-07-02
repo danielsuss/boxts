@@ -175,3 +175,33 @@ pub async fn listdevices_command() -> Result<String, String> {
         Err(e) => Err(format!("Failed to list devices: {}", e)),
     }
 }
+
+pub async fn stop_command() -> Result<String, String> {
+    crate::log::tauri_log("Stopping TTS and cleaning up resources...");
+    
+    // Send stop request to Python server
+    match bridge::send_stop_request().await {
+        Ok(_response) => {
+            crate::log::tauri_log("TTS stopped and resources cleaned up successfully");
+            Ok("TTS stopped and resources cleaned up".to_string())
+        },
+        Err(e) => Err(format!("Failed to stop TTS: {}", e)),
+    }
+}
+
+pub async fn changevoice_command(argument: Option<String>, state: State<'_, crate::AppState>) -> Result<String, String> {
+    match argument {
+        Some(voice_name) => {
+            // Save the selected voice to config
+            let _ = config::set_voice(&state, &voice_name);
+            crate::log::tauri_log(&format!("Selected voice: {}", voice_name));
+            
+            // Send changevoice request to Python server
+            match bridge::send_changevoice_request(voice_name.clone()).await {
+                Ok(_response) => Ok(format!("Voice changed to: {}", voice_name)),
+                Err(e) => Err(format!("Failed to change voice: {}", e)),
+            }
+        },
+        None => Err("No voice selected".to_string()),
+    }
+}

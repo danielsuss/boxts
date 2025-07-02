@@ -6,5 +6,5 @@ class SpeakRequest(BaseModel):
 class TrainModelRequest(BaseModel):
     filepath: str
 
-class StartRequest(BaseModel):
+class VoiceRequest(BaseModel):
     voice: str

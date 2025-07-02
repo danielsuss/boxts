@@ -89,3 +89,33 @@ pub async fn send_listdevices_request() -> Result<String, String> {
     }
 }
 
+pub async fn send_stop_request() -> Result<String, String> {
+    let client = Client::new();
+    let url = format!("{}/stop", SERVER_BASE_URL);
+    
+    match client.post(&url).send().await {
+        Ok(response) => match response.text().await {
+            Ok(body) => Ok(body),
+            Err(_) => Err("Failed to read response body".to_string()),
+        },
+        Err(e) => Err(format!("Request failed: {}", e)),
+    }
+}
+
+pub async fn send_changevoice_request(voice: String) -> Result<String, String> {
+    let client = Client::new();
+    let url = format!("{}/changevoice", SERVER_BASE_URL);
+    
+    let request_body = serde_json::json!({
+        "voice": voice
+    });
+    
+    match client.post(&url).json(&request_body).send().await {
+        Ok(response) => match response.text().await {
+            Ok(body) => Ok(body),
+            Err(_) => Err("Failed to read response body".to_string()),
+        },
+        Err(e) => Err(format!("Request failed: {}", e)),
+    }
+}
+
