@@ -21,7 +21,7 @@ struct AppState {
     server_process: Mutex<Option<Child>>,
 }
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "clonevoice", "restartserver", "start", "listdevices", "stop", "changevoice"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "clonevoice", "restartserver", "start", "listdevices", "stop", "changevoice", "ready"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -147,6 +147,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "listdevices" => commands::listdevices_command().await,
         "stop" => commands::stop_command().await,
         "changevoice" => commands::changevoice_command(argument, state).await,
+        "ready" => commands::ready_command().await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
@@ -211,8 +212,13 @@ pub fn run() {
                         match server_utils::start_server() {
                             Ok(child) => {
                                 let state = app_handle.state::<AppState>();
-                                let mut server_process = state.server_process.lock().unwrap();
-                                *server_process = Some(child);
+                                {
+                                    let mut server_process = state.server_process.lock().unwrap();
+                                    *server_process = Some(child);
+                                }
+                                
+                                // Start WebSocket listener for ready signals
+                                server_utils::listen_for_ready(app_handle.clone()).await;
                             },
                             Err(e) => {
                                 eprintln!("Failed to start Python server: {}", e);

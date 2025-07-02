@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import {
   register,
   unregister,
@@ -31,6 +32,9 @@ function App() {
   const [matchingCommands, setMatchingCommands] = useState<string[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
 
+  // Loading state
+  const [loading, setLoading] = useState(false);
+  const [loadingDots, setLoadingDots] = useState(1);
 
   // Color scheme
   const colors = {
@@ -90,8 +94,14 @@ function App() {
     e.preventDefault();
 
     if (items.length > 0) {
+      // Set loading state immediately for commands that will trigger ready signal
+      if (["start", "clonevoice", "changevoice"].includes(commandForItems)) {
+        setLoading(true);
+      }
+
       const selectedItem = items[selectedItemIndex];
       const command = `/${commandForItems} ${selectedItem}`;
+
       try {
         await invoke("process_input", { text: command });
       } catch (error) {
@@ -132,6 +142,14 @@ function App() {
       });
       if (handled) {
         return;
+      }
+    }
+
+    // Set loading state for commands that will trigger ready signal
+    if (text.startsWith("/")) {
+      const commandName = text.slice(1).split(" ")[0];
+      if (["stop", "ready"].includes(commandName)) {
+        setLoading(true);
       }
     }
 
@@ -285,6 +303,24 @@ function App() {
       .catch(console.error);
   }, []);
 
+  // Listen for ready events
+  useEffect(() => {
+    listen("ready", () => {
+      setLoading(false);
+    });
+  }, []);
+
+  // Loading animation
+  useEffect(() => {
+    if (!loading) return;
+
+    const interval = setInterval(() => {
+      setLoadingDots((prev) => (prev === 3 ? 1 : prev + 1));
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [loading]);
+
   // Register global shortcut and window focus handling
   useEffect(() => {
     const shortcut = "Alt+Enter";
@@ -393,7 +429,32 @@ function App() {
             pointerEvents: "none",
           }}
         />
-        {items.length > 0 ? (
+        {loading ? (
+          <input
+            type="text"
+            readOnly
+            value={`Loading${".".repeat(loadingDots)}`}
+            style={{
+              position: "absolute",
+              left: "0px",
+              top: "0px",
+              width: "400px",
+              height: "35px",
+              borderRadius: "4px",
+              border: "none",
+              padding: "0 10px",
+              fontSize: "16px",
+              fontFamily: "Consolas, 'Courier New', monospace",
+              fontStyle: "italic",
+              outline: "none",
+              backgroundColor: "transparent",
+              color: colors.suggestion,
+              caretColor: "transparent",
+              zIndex: 10,
+              pointerEvents: "none",
+            }}
+          />
+        ) : items.length > 0 ? (
           <>
             <input
               type="text"
@@ -493,7 +554,7 @@ function App() {
             {suggestion}
           </div>
         )}
-        {!hasSelection && items.length === 0 && (
+        {!hasSelection && items.length === 0 && !loading && (
           <div
             style={{
               position: "absolute",

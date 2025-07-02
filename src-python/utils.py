@@ -1,4 +1,5 @@
 import os
+import sys
 import pydub
 from log import server_log
 
@@ -27,3 +28,7 @@ def setup_ffmpeg():
     else:
         server_log("Production mode: Bundled FFmpeg not found, using system FFmpeg")
         return False
+
+def signal_ready():
+    """Signal to Rust that operation is complete"""
+    print("SERVER READY", file=sys.stderr, flush=True)

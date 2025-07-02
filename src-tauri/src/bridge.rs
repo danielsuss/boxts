@@ -119,3 +119,15 @@ pub async fn send_changevoice_request(voice: String) -> Result<String, String> {
     }
 }
 
+pub async fn send_ready_request() -> Result<String, String> {
+    let client = Client::new();
+    let url = format!("{}/ready", SERVER_BASE_URL);
+    
+    match client.post(&url).send().await {
+        Ok(response) => match response.text().await {
+            Ok(body) => Ok(body),
+            Err(_) => Err("Failed to read response body".to_string()),
+        },
+        Err(e) => Err(format!("Request failed: {}", e)),
+    }
+}

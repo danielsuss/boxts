@@ -206,3 +206,15 @@ pub async fn changevoice_command(argument: Option<String>, state: State<'_, crat
     }
 }
 
+pub async fn ready_command() -> Result<String, String> {
+    crate::log::tauri_log("Sending manual ready signal...");
+    
+    // Send ready request to Python server
+    match bridge::send_ready_request().await {
+        Ok(_response) => {
+            Ok("Ready signal sent".to_string())
+        },
+        Err(e) => Err(format!("Failed to send ready signal: {}", e)),
+    }
+}
+

@@ -1,20 +1,48 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from boxts_manager import BoxtsManager
 from RealtimeTTS import TextToAudioStream, CoquiEngine
 import pyaudio
 import uvicorn
 import os
-from utils import setup_ffmpeg, is_production_environment
+from utils import setup_ffmpeg, is_production_environment, signal_ready
 from models import SpeakRequest, TrainModelRequest, VoiceRequest
 from config import get_output_device, get_volume
-from log import server_log
+from log import server_log, server_websocket_log
 from tts_utils import clone_voice
 
 # Setup FFmpeg for audio processing
 setup_ffmpeg()
 
-app = FastAPI(title="Boxts TTS Server", version="0.1.0")
 boxts_manager = BoxtsManager()
+
+# WebSocket connections for ready signals
+ready_connections = set()
+
+app = FastAPI(title="Boxts TTS Server", version="0.1.0")
+ 
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    ready_connections.add(websocket)
+    try:
+        # Keep connection alive
+        while True:
+            await websocket.receive_text()
+            await signal_ready_ws()
+    except Exception:
+        pass
+    finally:
+        ready_connections.discard(websocket)
+
+async def signal_ready_ws():
+    """Signal ready to all WebSocket connections"""
+    if ready_connections:
+        for connection in ready_connections.copy():
+            try:
+                await connection.send_text("ready")
+                server_websocket_log("Ready!")
+            except Exception:
+                ready_connections.discard(connection)
 
 @app.get("/")
 async def root():
@@ -46,10 +74,12 @@ async def clonevoice(request: TrainModelRequest):
     try:
         embedding_path, voice_name = clone_voice(request.filepath)
         server_log(f"Voice cloning completed: {embedding_path}")
+        await signal_ready_ws()
         return {"status": "success", "message": f"Voice cloned successfully: {voice_name}"}
         
     except Exception as e:
         server_log(f"Error cloning voice: {str(e)}")
+        await signal_ready_ws()
         return {"status": "error", "message": f"Failed to clone voice: {str(e)}"}
 
 @app.post("/start")
@@ -60,6 +90,7 @@ async def start_tts(request: VoiceRequest):
         # Check if engine already exists
         if boxts_manager.engine is not None:
             server_log("TTS already started, try using /changevoice")
+            await signal_ready_ws()
             return {"status": "error", "message": "TTS already started, try using /changevoice"}
         # Get audio device configuration
         output_device_name = get_output_device()
@@ -121,10 +152,12 @@ async def start_tts(request: VoiceRequest):
         boxts_manager.stream.play_async()
         
         server_log(f"TTS started successfully with voice: {request.voice}")
+        await signal_ready_ws()
         return {"status": "success", "message": f"TTS started with voice: {request.voice}"}
         
     except Exception as e:
         server_log(f"Error starting TTS: {str(e)}")
+        await signal_ready_ws()
         return {"status": "error", "message": f"Failed to start TTS: {str(e)}"}
 
 @app.post("/volume")
@@ -203,12 +236,14 @@ async def stop_tts():
         if boxts_manager.engine is not None:
             server_log("Clearing engine reference...")
             boxts_manager.engine = None
-        
+
         server_log("TTS stopped and resources cleaned up successfully")
+        await signal_ready_ws()
         return {"status": "success", "message": "TTS stopped and resources cleaned up"}
         
     except Exception as e:
         server_log(f"Error stopping TTS: {str(e)}")
+        await signal_ready_ws()
         return {"status": "error", "message": f"Failed to stop TTS: {str(e)}"}
 
 @app.post("/changevoice")
@@ -229,12 +264,21 @@ async def change_voice(request: VoiceRequest):
         boxts_manager.stream.play_async()
         
         server_log(f"Voice successfully changed to: {request.voice}")
+        await signal_ready_ws()
         return {"status": "success", "message": f"Voice changed to: {request.voice}"}
         
     except Exception as e:
         server_log(f"Error changing voice: {str(e)}")
+        await signal_ready_ws()
         return {"status": "error", "message": f"Failed to change voice: {str(e)}"}
+
+@app.post("/ready")
+async def ready():
+    server_log("Manual ready signal requested")
+    await signal_ready_ws()
+    return {"status": "success", "message": "Ready signal sent"}
 
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
+    signal_ready_ws()

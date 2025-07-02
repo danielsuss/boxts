@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 use std::process::{Command, Child, Stdio};
 use std::fs::OpenOptions;
-use tauri::State;
+use tauri::{State, Emitter};
+use tokio_tungstenite::{connect_async, tungstenite::Message};
+use futures_util::{StreamExt};
 
 pub fn get_python_paths() -> (PathBuf, PathBuf) {
     if cfg!(debug_assertions) {
@@ -49,4 +51,39 @@ pub fn stop_server(state: State<crate::AppState>) {
         }
         *server_process = None;
     }
+}
+
+pub async fn listen_for_ready(app_handle: tauri::AppHandle) {
+    tokio::spawn(async move {
+        loop {
+            match connect_async("ws://127.0.0.1:8000/ws").await {
+                Ok((mut ws_stream, _)) => {
+                    crate::log::tauri_websocket_log("Connected to WebSocket for ready signals");
+                    
+                    while let Some(msg) = ws_stream.next().await {
+                        match msg {
+                            Ok(Message::Text(text)) => {
+                                if text == "ready" {
+                                    crate::log::tauri_websocket_log("Ready!");
+                                    if let Err(e) = app_handle.emit("ready", ()) {
+                                        crate::log::tauri_log(&format!("Failed to emit ready event: {}", e));
+                                    }
+                                }
+                            }
+                            Ok(Message::Close(_)) => {
+                                crate::log::tauri_websocket_log("WebSocket connection closed");
+                                break;
+                            }
+                            Err(e) => {
+                                crate::log::tauri_websocket_log(&format!("WebSocket error: {}", e));
+                                break;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+    });
 }
