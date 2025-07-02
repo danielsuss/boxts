@@ -29,18 +29,30 @@ fn get_available_commands() -> Vec<String> {
 }
 
 #[tauri::command]
-fn get_output_devices() -> Vec<String> {
+fn get_output_devices(state: State<AppState>) -> Vec<String> {
     use cpal::traits::{HostTrait, DeviceTrait};
     
     let host = cpal::default_host();
-    match host.output_devices() {
+    let mut devices = match host.output_devices() {
         Ok(devices) => {
             devices
                 .filter_map(|device| device.name().ok())
                 .collect()
         }
         Err(_) => vec!["No output devices found".to_string()]
+    };
+    
+    if devices.is_empty() {
+        return vec!["No output devices found".to_string()];
     }
+    
+    // Rotate list to put current output device first
+    let current_device = config::get_output_device(&state);
+    if let Some(current_index) = devices.iter().position(|d| d == &current_device) {
+        devices.rotate_left(current_index);
+    }
+    
+    devices
 }
 
 #[tauri::command]
@@ -100,6 +112,7 @@ fn get_voices(state: State<AppState>) -> Vec<String> {
 fn is_dialog_active(state: State<AppState>) -> bool {
     *state.dialog_active.lock().unwrap()
 }
+
 
 #[tauri::command]
 async fn process_input(text: String, app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {

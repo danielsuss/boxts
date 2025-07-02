@@ -91,6 +91,12 @@ pub fn set_monitor_id(state: &State<crate::AppState>, monitor_id: u32) -> Result
     Ok(())
 }
 
+
+pub fn get_output_device(state: &State<crate::AppState>) -> String {
+    let config = state.config.lock().unwrap();
+    config.tts.output_device.clone()
+}
+
 pub fn set_output_device(state: &State<crate::AppState>, device_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = state.config.lock().unwrap();
     config.tts.output_device = device_name.to_string();

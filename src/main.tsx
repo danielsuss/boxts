@@ -7,6 +7,7 @@ import {
   unregister,
   isRegistered,
 } from "@tauri-apps/plugin-global-shortcut";
+import { handleItemCommand } from "./itemSelector";
 
 function App() {
   const [text, setText] = useState("");
@@ -15,6 +16,7 @@ function App() {
   const [availableCommands, setAvailableCommands] = useState<string[]>([]);
   const [suggestion, setSuggestion] = useState("");
   const [showErrorCursor, setShowErrorCursor] = useState(false);
+  const [showSuggestionCursor, setShowSuggestionCursor] = useState(false);
   const [animateCursor, setAnimateCursor] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -23,13 +25,22 @@ function App() {
   const [selectedItemIndex, setSelectedItemIndex] = useState(0);
   const [commandForItems, setCommandForItems] = useState("");
 
+  // Tab cycling state
+  const [tabCycleMode, setTabCycleMode] = useState(false);
+  const [, setOriginalPartial] = useState("");
+  const [matchingCommands, setMatchingCommands] = useState<string[]>([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+
+
   // Color scheme
   const colors = {
     background: "#131313",
-    text: "#c4c4c4",
+    text: "#eeeeee",
     border: "#535353",
     suggestion: "#79f079",
     error: "#FF6B6B",
+    itemPrimary: "#00ffea", // Cyan for first item
+    itemSecondary: "#fffb00", // Yellow for other items
   };
 
   const updateSuggestion = (inputText: string) => {
@@ -56,6 +67,25 @@ function App() {
     return false;
   };
 
+  const isIncompleteCommand = () => {
+    return (
+      text.startsWith("/") &&
+      (text.length === 1 ||
+        (text.length > 1 && suggestion && suggestion.length > 0))
+    );
+  };
+
+  const findMatchingCommands = (partial: string) => {
+    return availableCommands.filter((cmd) => cmd.startsWith(partial));
+  };
+
+  const resetTabCycleMode = () => {
+    setTabCycleMode(false);
+    setOriginalPartial("");
+    setMatchingCommands([]);
+    setCurrentMatchIndex(0);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -74,6 +104,7 @@ function App() {
     }
 
     if (isTextError()) {
+      setShowSuggestionCursor(false);
       setShowErrorCursor(true);
       setAnimateCursor(true);
       setTimeout(() => setAnimateCursor(false), 50);
@@ -81,56 +112,27 @@ function App() {
       return;
     }
 
-    if (text === "/start") {
-      try {
-        const result = await invoke<string[]>("get_voices");
-        setItems(result);
-        setSelectedItemIndex(0);
-        setCommandForItems("start");
-        setText("");
-      } catch (error) {
-        console.error("Error getting voices:", error);
-      }
+    if (isIncompleteCommand()) {
+      setShowErrorCursor(false);
+      setShowSuggestionCursor(true);
+      setAnimateCursor(true);
+      setTimeout(() => setAnimateCursor(false), 50);
+      setTimeout(() => setShowSuggestionCursor(false), 500);
       return;
     }
 
-    if (text === "/changevoice") {
-      try {
-        const result = await invoke<string[]>("get_voices");
-        setItems(result);
-        setSelectedItemIndex(0);
-        setCommandForItems("changevoice");
-        setText("");
-      } catch (error) {
-        console.error("Error getting voices:", error);
+    // Handle item selector commands
+    if (text.startsWith("/")) {
+      const command = text.slice(1);
+      const handled = await handleItemCommand(command, {
+        setItems,
+        setSelectedItemIndex,
+        setCommandForItems,
+        setText,
+      });
+      if (handled) {
+        return;
       }
-      return;
-    }
-
-    if (text === "/outputdevice") {
-      try {
-        const result = await invoke<string[]>("get_output_devices");
-        setItems(result);
-        setSelectedItemIndex(0);
-        setCommandForItems("outputdevice");
-        setText("");
-      } catch (error) {
-        console.error("Error getting output devices:", error);
-      }
-      return;
-    }
-
-    if (text === "/volume") {
-      try {
-        const result = await invoke<string[]>("get_volume_values");
-        setItems(result);
-        setSelectedItemIndex(0);
-        setCommandForItems("volume");
-        setText("");
-      } catch (error) {
-        console.error("Error getting volume values:", error);
-      }
-      return;
     }
 
     try {
@@ -142,6 +144,7 @@ function App() {
     setText("");
     setCursorPos(0);
     setSuggestion("");
+    resetTabCycleMode();
     // Reset input scroll position
     if (inputRef.current) {
       inputRef.current.scrollLeft = 0;
@@ -166,12 +169,59 @@ function App() {
         setSelectedItemIndex((prevIndex) =>
           prevIndex > 0 ? prevIndex - 1 : items.length - 1
         );
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setItems([]);
+        setCommandForItems("");
+        setSelectedItemIndex(0);
       }
     } else {
       // Regular input key handling
       if (e.key === "Tab") {
         e.preventDefault();
-        if (suggestion) {
+
+        if (text.startsWith("/") && text.length > 1) {
+          if (!tabCycleMode) {
+            // First tab - enter cycle mode
+            const partial = text.slice(1);
+            const matches = findMatchingCommands(partial);
+
+            if (matches.length > 0) {
+              setTabCycleMode(true);
+              setOriginalPartial(partial);
+              setMatchingCommands(matches);
+              setCurrentMatchIndex(0);
+
+              const fullCommand = `/${matches[0]}`;
+              setText(fullCommand);
+              setSuggestion("");
+
+              setTimeout(() => {
+                if (inputRef.current) {
+                  const newPos = fullCommand.length;
+                  inputRef.current.setSelectionRange(newPos, newPos);
+                  setCursorPos(newPos);
+                }
+              }, 0);
+            }
+          } else {
+            // Subsequent tabs - cycle through matches
+            const nextIndex = (currentMatchIndex + 1) % matchingCommands.length;
+            setCurrentMatchIndex(nextIndex);
+
+            const fullCommand = `/${matchingCommands[nextIndex]}`;
+            setText(fullCommand);
+
+            setTimeout(() => {
+              if (inputRef.current) {
+                const newPos = fullCommand.length;
+                inputRef.current.setSelectionRange(newPos, newPos);
+                setCursorPos(newPos);
+              }
+            }, 0);
+          }
+        } else if (suggestion) {
+          // Legacy behavior for non-cycling cases
           const fullCommand = `/${text.slice(1)}${suggestion}`;
           setText(fullCommand);
           setSuggestion("");
@@ -190,9 +240,14 @@ function App() {
         e.key === "Home" ||
         e.key === "End"
       ) {
+        resetTabCycleMode();
         updateCursorPos();
       } else if (e.ctrlKey && e.key === "a") {
+        resetTabCycleMode();
         updateCursorPos();
+      } else {
+        // Any other key press resets tab cycle mode
+        resetTabCycleMode();
       }
     }
   };
@@ -339,29 +394,52 @@ function App() {
           }}
         />
         {items.length > 0 ? (
-          <input
-            type="text"
-            readOnly
-            value={items[selectedItemIndex]}
-            autoFocus
-            style={{
-              position: "absolute",
-              left: "0px",
-              top: "0px",
-              width: "400px",
-              height: "35px",
-              borderRadius: "4px",
-              border: "none",
-              padding: "0 10px",
-              fontSize: "16px",
-              fontFamily: "Consolas, 'Courier New', monospace",
-              outline: "none",
-              backgroundColor: "transparent",
-              color: colors.suggestion,
-              caretColor: "transparent",
-              zIndex: 2,
-            }}
-          />
+          <>
+            <input
+              type="text"
+              readOnly
+              value={`↕ ${items[selectedItemIndex]}`}
+              autoFocus
+              style={{
+                position: "absolute",
+                left: "0px",
+                top: "0px",
+                width: "400px",
+                height: "35px",
+                borderRadius: "4px",
+                border: "none",
+                padding: "0 10px",
+                fontSize: "16px",
+                fontFamily: "Consolas, 'Courier New', monospace",
+                fontStyle: "italic",
+                outline: "none",
+                backgroundColor: "transparent",
+                color:
+                  selectedItemIndex === 0
+                    ? colors.itemPrimary
+                    : colors.itemSecondary,
+                caretColor: "transparent",
+                zIndex: 2,
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                left: "10px",
+                top: "22px",
+                fontSize: "10px",
+                fontFamily: "Consolas, 'Courier New', monospace",
+                fontStyle: "italic",
+                color:
+                  selectedItemIndex === 0
+                    ? colors.itemPrimary
+                    : colors.itemSecondary,
+                zIndex: 4,
+              }}
+            >
+              esc • cancel
+            </div>
+          </>
         ) : (
           <input
             ref={inputRef}
@@ -369,6 +447,7 @@ function App() {
             value={text}
             onChange={(e) => {
               setText(e.target.value);
+              resetTabCycleMode();
               updateCursorPos();
               updateSuggestion(e.target.value);
             }}
@@ -423,12 +502,18 @@ function App() {
                   10 +
                     measureTextWidth(text, cursorPos) -
                     (inputRef.current?.scrollLeft || 0)
-                ) + 1
+                ) +
+                1 -
+                (animateCursor ? 1 : 0)
               }px`,
-              top: "8px",
-              width: `${getCharWidth()}px`,
-              height: "19px",
-              backgroundColor: showErrorCursor ? colors.error : colors.text,
+              top: `${8 - (animateCursor ? 1 : 0)}px`,
+              width: `${animateCursor ? getCharWidth() + 2 : getCharWidth()}px`,
+              height: `${animateCursor ? 21 : 19}px`,
+              backgroundColor: showErrorCursor
+                ? colors.error
+                : showSuggestionCursor
+                ? colors.suggestion
+                : colors.text,
               color: colors.background,
               display: "flex",
               alignItems: "center",
@@ -437,8 +522,7 @@ function App() {
               fontFamily: "Consolas, 'Courier New', monospace",
               lineHeight: "19px",
               zIndex: 3,
-              transform: animateCursor ? "scale(1.2)" : "scale(1)",
-              transition: "transform 0.05s ease-out",
+              transition: "width 0.05s ease-out, height 0.05s ease-out",
             }}
           >
             {suggestion && cursorPos === text.length
