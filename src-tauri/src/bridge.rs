@@ -63,3 +63,29 @@ pub async fn send_start_request(voice: String) -> Result<String, String> {
     }
 }
 
+pub async fn send_volume_request() -> Result<String, String> {
+    let client = Client::new();
+    let url = format!("{}/volume", SERVER_BASE_URL);
+    
+    match client.post(&url).send().await {
+        Ok(response) => match response.text().await {
+            Ok(body) => Ok(body),
+            Err(_) => Err("Failed to read response body".to_string()),
+        },
+        Err(e) => Err(format!("Request failed: {}", e)),
+    }
+}
+
+pub async fn send_listdevices_request() -> Result<String, String> {
+    let client = Client::new();
+    let url = format!("{}/listdevices", SERVER_BASE_URL);
+    
+    match client.post(&url).send().await {
+        Ok(response) => match response.text().await {
+            Ok(body) => Ok(body),
+            Err(_) => Err("Failed to read response body".to_string()),
+        },
+        Err(e) => Err(format!("Request failed: {}", e)),
+    }
+}
+

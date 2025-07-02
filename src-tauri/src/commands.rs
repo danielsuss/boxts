@@ -78,7 +78,12 @@ pub async fn volume_command(argument: Option<String>, state: State<'_, crate::Ap
                 Ok(volume) => {
                     let _ = config::set_volume(&state, volume);
                     crate::log::tauri_log(&format!("Selected volume: {}", volume));
-                    Ok(format!("Volume set to: {}", volume))
+                    
+                    // Send volume update request to Python server
+                    match bridge::send_volume_request().await {
+                        Ok(_response) => Ok(format!("Volume set to: {}", volume)),
+                        Err(e) => Err(format!("Failed to update volume: {}", e)),
+                    }
                 },
                 Err(_) => Err("Invalid volume value".to_string()),
             }
@@ -155,5 +160,18 @@ pub async fn start_command(argument: Option<String>, state: State<'_, crate::App
             }
         },
         None => Err("No voice selected".to_string()),
+    }
+}
+
+pub async fn listdevices_command() -> Result<String, String> {
+    crate::log::tauri_log("Listing audio devices...");
+    
+    // Send list devices request to Python server
+    match bridge::send_listdevices_request().await {
+        Ok(_response) => {
+            crate::log::tauri_log("Audio devices listed successfully");
+            Ok("Audio devices listed in server log".to_string())
+        },
+        Err(e) => Err(format!("Failed to list devices: {}", e)),
     }
 }

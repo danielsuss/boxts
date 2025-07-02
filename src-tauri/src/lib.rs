@@ -21,7 +21,7 @@ struct AppState {
     server_process: Mutex<Option<Child>>,
 }
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "clonevoice", "restartserver", "start"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "clonevoice", "restartserver", "start", "listdevices"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -131,6 +131,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "clonevoice" => commands::clonevoice_command(app, state).await,
         "restartserver" => commands::restartserver_command(state).await,
         "start" => commands::start_command(argument, state).await,
+        "listdevices" => commands::listdevices_command().await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }

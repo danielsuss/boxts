@@ -64,3 +64,23 @@ in python:
 - create CoquiEngine using voice, output_device_index, "cuda" - assign to boxts_manager.engine
 - create TextToAudioStream using boxts_manager.engine, volume from get_volume (config.py) - assign to boxts_manager.stream
 - start streaming audio (can see how this is done in .legacy)
+
+30/06/25
+
+FRONTEND
+
+- rotated list for /outputdevice
+- change item selector font styling - current selection cyan, everything italic?
+- update command handler so it cycles through all potential matches upon tab press
+- press escape to cancel two stage command
+- improve ux when waiting on commands to run / server to start
+- can still send command if it is half way through a correct one
+
+BACKEND
+
+- /stop route
+- /start should kill any instance of a stream and coqui engine if exists
+
+GENERAL
+
+- debug virtual audio cable not working

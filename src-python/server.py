@@ -59,8 +59,14 @@ async def start_tts(request: StartRequest):
     try:
         # Get audio device configuration
         output_device_name = get_output_device()
+
+        # Prevent problematic VB Cable setup
+        if output_device_name == "CABLE Input (VB-Audio Virtual Cable)" or "CABLE In 16ch (VB-Audio Virtual Cable)":
+            output_device_name = "CABLE Input (VB-Audio Virtual C"
+            server_log(f"Avoiding VB Cable problems by defaulting to {output_device_name}")
+
         volume = get_volume()
-        
+
         # Get output device index using pyaudio
         p = pyaudio.PyAudio()
         output_device_index = None
@@ -77,16 +83,22 @@ async def start_tts(request: StartRequest):
             output_device_index = 0  # Use default device
             server_log(f"Device '{output_device_name}' not found, using default device")
 
+        server_log(f"Selected output device index: {output_device_index}")
+
         # Set voices path based on environment
         if is_production_environment():
             voices_path = "./realtimetts-resources/voices"
+            models_path = "./realtimetts-resources/models"
         else:
             voices_path = "../realtimetts-resources/voices"
+            models_path = "../realtimetts-resources/models"
 
         # Create CoquiEngine with voice
         boxts_manager.engine = CoquiEngine(
             voice=request.voice,
             voices_path=voices_path,
+            local_models_path=models_path,
+            specific_model="v2.0.3",
             device="cuda"
         )
         
@@ -110,6 +122,59 @@ async def start_tts(request: StartRequest):
     except Exception as e:
         server_log(f"Error starting TTS: {str(e)}")
         return {"status": "error", "message": f"Failed to start TTS: {str(e)}"}
+
+@app.post("/volume")
+async def update_volume():
+    server_log("Updating volume from config")
+    
+    try:
+        if boxts_manager.stream is None:
+            return {"status": "error", "message": "TTS not started. Use /start command first."}
+        
+        # Get volume from config and update stream
+        volume = get_volume()
+        boxts_manager.stream.volume = volume
+        
+        server_log(f"Volume updated to: {volume}")
+        return {"status": "success", "message": f"Volume updated to: {volume}"}
+        
+    except Exception as e:
+        server_log(f"Error updating volume: {str(e)}")
+        return {"status": "error", "message": f"Failed to update volume: {str(e)}"}
+
+@app.post("/listdevices")
+async def list_devices():
+    server_log("Listing all available audio devices")
+    
+    try:
+        p = pyaudio.PyAudio()
+        devices = []
+        
+        for i in range(p.get_device_count()):
+            device_info = p.get_device_info_by_index(i)
+            devices.append({
+                "index": i,
+                "name": device_info['name'],
+                "max_input_channels": device_info['maxInputChannels'],
+                "max_output_channels": device_info['maxOutputChannels'],
+                "default_sample_rate": device_info['defaultSampleRate'],
+                "host_api": device_info['hostApi'],
+                "is_input": device_info['maxInputChannels'] > 0,
+                "is_output": device_info['maxOutputChannels'] > 0
+            })
+        
+        p.terminate()
+        
+        # Log each device for debugging
+        for device in devices:
+            if device['is_output']:
+                server_log(f"Output Device {device['index']}: {device['name']} (Channels: {device['max_input_channels']}, SR: {device['default_sample_rate']})")
+        
+        return {"status": "success", "devices": devices}
+        
+    except Exception as e:
+        server_log(f"Error listing devices: {str(e)}")
+        return {"status": "error", "message": f"Failed to list devices: {str(e)}"}
 
 
 if __name__ == "__main__":
