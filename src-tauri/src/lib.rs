@@ -21,7 +21,7 @@ struct AppState {
     server_process: Mutex<Option<Child>>,
 }
 
-const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "clonevoice", "restartserver", "start", "listdevices", "stop", "changevoice", "ready"];
+const AVAILABLE_COMMANDS: &[&str] = &["center", "exit", "nextmonitor", "topleft", "topright", "bottomleft", "bottomright", "resetconfig", "outputdevice", "volume", "clonevoice", "restartserver", "start", "listdevices", "stop", "changevoice", "ready", "lostfocus"];
 
 #[tauri::command]
 fn get_available_commands() -> Vec<String> {
@@ -122,6 +122,24 @@ fn get_environment_type() -> String {
     }
 }
 
+#[tauri::command]
+fn get_lostfocus_behaviour(state: State<AppState>) -> String {
+    config::get_lostfocus_behaviour(&state)
+}
+
+#[tauri::command]
+fn get_lostfocus_options(state: State<AppState>) -> Vec<String> {
+    let current_behaviour = config::get_lostfocus_behaviour(&state);
+    let mut options = vec!["hide".to_string(), "show".to_string()];
+    
+    // Put current behaviour first
+    if let Some(current_index) = options.iter().position(|opt| opt == &current_behaviour) {
+        options.rotate_left(current_index);
+    }
+    
+    options
+}
+
 
 #[tauri::command]
 async fn process_input(text: String, app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
@@ -157,6 +175,7 @@ async fn handle_command(command_str: &str, app: tauri::AppHandle, state: State<'
         "stop" => commands::stop_command().await,
         "changevoice" => commands::changevoice_command(argument, state).await,
         "ready" => commands::ready_command().await,
+        "lostfocus" => commands::lostfocus_command(argument, state).await,
         _ => Err(format!("Unknown command: {}", command))
     }
 }
@@ -239,7 +258,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices, get_volume_values, get_voices, is_dialog_active, get_environment_type])
+        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices, get_volume_values, get_voices, is_dialog_active, get_environment_type, get_lostfocus_behaviour, get_lostfocus_options])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

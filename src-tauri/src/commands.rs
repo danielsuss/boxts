@@ -221,3 +221,19 @@ pub async fn ready_command() -> Result<String, String> {
     }
 }
 
+pub async fn lostfocus_command(argument: Option<String>, state: State<'_, crate::AppState>) -> Result<String, String> {
+    match argument {
+        Some(behaviour) => {
+            match behaviour.as_str() {
+                "show" | "hide" => {
+                    let _ = config::set_lostfocus_behaviour(&state, &behaviour);
+                    crate::log::tauri_log(&format!("Lost focus behaviour set to: {}", behaviour));
+                    Ok(format!("Lost focus behaviour set to: {}", behaviour))
+                },
+                _ => Err("Invalid behaviour. Use 'show' or 'hide'.".to_string()),
+            }
+        },
+        None => Err("No behaviour selected".to_string()),
+    }
+}
+

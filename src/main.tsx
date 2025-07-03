@@ -364,11 +364,20 @@ function App() {
 
     const setupFocusHandler = async () => {
       try {
-        // Hide window when it loses focus
+        // Hide window when it loses focus (based on configuration)
         const unlistenBlur = await window.onFocusChanged(
-          ({ payload: focused }) => {
+          async ({ payload: focused }) => {
             if (!focused) {
-              window.hide().catch(console.error);
+              try {
+                const lostFocusBehaviour = await invoke<string>("get_lostfocus_behaviour");
+                if (lostFocusBehaviour === "hide") {
+                  window.hide().catch(console.error);
+                }
+              } catch (error) {
+                console.error("Failed to get lost focus behaviour:", error);
+                // Default to hide on error
+                window.hide().catch(console.error);
+              }
             }
           }
         );

@@ -28,6 +28,10 @@ const ITEM_COMMANDS: Record<string, ItemSelectorConfig> = {
   "volume": {
     invokeFunction: "get_volume_values",
     errorMessage: "Error getting volume values"
+  },
+  "lostfocus": {
+    invokeFunction: "get_lostfocus_options",
+    errorMessage: "Error getting lost focus options"
   }
 };
 

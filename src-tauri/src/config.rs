@@ -12,6 +12,7 @@ pub struct BoxtsConfig {
 pub struct WindowConfig {
     pub position: String,
     pub monitor_id: u32,
+    pub lost_focus_behaviour: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -27,6 +28,7 @@ impl Default for BoxtsConfig {
             window: WindowConfig {
                 position: "topleft".to_string(),
                 monitor_id: 0,
+                lost_focus_behaviour: "hide".to_string(),
             },
             tts: TTSConfig {
                 output_device: "Default".to_string(),
@@ -131,6 +133,18 @@ pub fn set_voice(state: &State<crate::AppState>, voice: &str) -> Result<(), Box<
 pub async fn apply_config(app: tauri::AppHandle, state: State<'_, crate::AppState>) -> Result<(), Box<dyn std::error::Error>> {
     apply_ui_config(app.clone(), state.clone()).await?;
     apply_tts_config()?;
+    Ok(())
+}
+
+pub fn get_lostfocus_behaviour(state: &State<crate::AppState>) -> String {
+    let config = state.config.lock().unwrap();
+    config.window.lost_focus_behaviour.clone()
+}
+
+pub fn set_lostfocus_behaviour(state: &State<crate::AppState>, behaviour: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = state.config.lock().unwrap();
+    config.window.lost_focus_behaviour = behaviour.to_string();
+    save_config(&config).map_err(|e| format!("Failed to save config: {}", e))?;
     Ok(())
 }
 
