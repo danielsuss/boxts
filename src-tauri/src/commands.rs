@@ -237,3 +237,31 @@ pub async fn lostfocus_command(argument: Option<String>, state: State<'_, crate:
     }
 }
 
+pub async fn help_command(app: tauri::AppHandle) -> Result<String, String> {
+    use tauri::{WebviewWindowBuilder, WebviewUrl};
+    
+    crate::log::tauri_log("Opening help window...");
+    
+    let help_window = WebviewWindowBuilder::new(
+        &app,
+        "help", 
+        WebviewUrl::App("help.html".into())
+    )
+    .title("Boxts Help")
+    .center()
+    .inner_size(800.0, 600.0)
+    .resizable(true)
+    .build();
+
+    match help_window {
+        Ok(_) => {
+            crate::log::tauri_log("Help window opened successfully");
+            Ok("Help window opened".to_string())
+        },
+        Err(e) => {
+            crate::log::tauri_log(&format!("Failed to open help window: {}", e));
+            Err(format!("Failed to open help window: {}", e))
+        }
+    }
+}
+

@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": ["main", "help"],
   "permissions": [
     "core:default",
     "opener:default",
@@ -12,6 +12,7 @@
     "core:window:allow-hide",
     "core:window:allow-show",
     "core:window:allow-set-focus",
-    "core:window:allow-is-visible"
+    "core:window:allow-is-visible",
+    "core:webview:allow-create-webview-window"
   ]
 }

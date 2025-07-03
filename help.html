@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boxts Help</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #131313;
+            color: #eeeeee;
+            line-height: 1.6;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            border-bottom: 2px solid #535353;
+            padding-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #79f079;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #cccccc;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .intro {
+            background: rgba(121, 240, 121, 0.1);
+            border-left: 4px solid #79f079;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .intro h2 {
+            color: #79f079;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .intro ul {
+            margin-left: 1.5rem;
+        }
+
+        .intro li {
+            margin-bottom: 0.5rem;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section h3 {
+            color: #00ffea;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #535353;
+            padding-bottom: 0.5rem;
+        }
+
+        .command-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .command {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #535353;
+            border-radius: 8px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .command:hover {
+            border-color: #79f079;
+            background: rgba(121, 240, 121, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .command-name {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #79f079;
+            margin-bottom: 0.5rem;
+        }
+
+        .command-desc {
+            color: #cccccc;
+            font-size: 0.95rem;
+        }
+
+        .hotkey {
+            background: rgba(121, 240, 121, 0.15);
+            border: 1px solid #79f079;
+            border-radius: 6px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .hotkey .key {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #79f079;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin: 0 0.2rem;
+        }
+
+        .note {
+            background: rgba(255, 255, 0, 0.1);
+            border-left: 4px solid #fffb00;
+            padding: 1rem;
+            margin-top: 2rem;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .note p {
+            color: #fffb00;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .command-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Boxts Help</h1>
+            <p>A floating text-to-speech overlay application that converts your typed text into speech.</p>
+        </div>
+
+        <div class="hotkey">
+            <h2>Global Hotkey</h2>
+            <p>Press <span class="key">Alt</span> + <span class="key">Enter</span> anywhere on your system to open the text input overlay</p>
+        </div>
+
+        <div class="intro">
+            <h2>How to Use</h2>
+            <ul>
+                <li>Press <strong>Alt+Enter</strong> to open the text input overlay</li>
+                <li>Type your text and press <strong>Enter</strong> for speech</li>
+                <li>Type commands starting with <strong>/</strong> for configuration</li>
+                <li>Use <strong>Tab</strong> for command autocompletion</li>
+                <li>Use <strong>Arrow keys</strong> to navigate item selectors</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>Window Positioning</h3>
+            <div class="command-grid">
+                <div class="command">
+                    <div class="command-name">/center</div>
+                    <div class="command-desc">Center window on current monitor</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/topleft</div>
+                    <div class="command-desc">Move window to top-left corner</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/topright</div>
+                    <div class="command-desc">Move window to top-right corner</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/bottomleft</div>
+                    <div class="command-desc">Move window to bottom-left corner</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/bottomright</div>
+                    <div class="command-desc">Move window to bottom-right corner</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/nextmonitor</div>
+                    <div class="command-desc">Switch to next available monitor</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Audio Configuration</h3>
+            <div class="command-grid">
+                <div class="command">
+                    <div class="command-name">/outputdevice</div>
+                    <div class="command-desc">Select audio output device from available options</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/volume</div>
+                    <div class="command-desc">Set TTS volume (0.00-1.00)</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/listdevices</div>
+                    <div class="command-desc">List available audio devices in console</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Voice Management</h3>
+            <div class="command-grid">
+                <div class="command">
+                    <div class="command-name">/start</div>
+                    <div class="command-desc">Start TTS with voice selection</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/stop</div>
+                    <div class="command-desc">Stop TTS and clean up resources</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/changevoice</div>
+                    <div class="command-desc">Change to different voice</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/clonevoice</div>
+                    <div class="command-desc">Clone voice from audio file (opens file dialog)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Application Settings</h3>
+            <div class="command-grid">
+                <div class="command">
+                    <div class="command-name">/lostfocus</div>
+                    <div class="command-desc">Configure window behavior when focus is lost (hide/show)</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/resetconfig</div>
+                    <div class="command-desc">Reset all settings to defaults</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/restartserver</div>
+                    <div class="command-desc">Restart the Python TTS backend</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/exit</div>
+                    <div class="command-desc">Close the application</div>
+                </div>
+                <div class="command">
+                    <div class="command-name">/help</div>
+                    <div class="command-desc">Open this help window</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>System Commands</h3>
+            <div class="command-grid">
+                <div class="command">
+                    <div class="command-name">/ready</div>
+                    <div class="command-desc">Send manual ready signal to backend</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note">
+            <p><strong>Note:</strong> Commands that require selection will show an item selector. Use arrow keys to navigate and Enter to select.</p>
+        </div>
+    </div>
+
+    <script>
+        // Prevent over-scrolling past top and bottom
+        let isScrolling = false;
+        
+        document.addEventListener('wheel', function(e) {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight;
+            const clientHeight = document.documentElement.clientHeight;
+            const maxScroll = scrollHeight - clientHeight;
+            
+            // Prevent scrolling up when at top
+            if (scrollTop <= 0 && e.deltaY < 0) {
+                e.preventDefault();
+            }
+            
+            // Prevent scrolling down when at bottom
+            if (scrollTop >= maxScroll && e.deltaY > 0) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Also prevent touch/trackpad over-scrolling
+        document.addEventListener('touchmove', function(e) {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight;
+            const clientHeight = document.documentElement.clientHeight;
+            const maxScroll = scrollHeight - clientHeight;
+            
+            if (scrollTop <= 0 || scrollTop >= maxScroll) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
