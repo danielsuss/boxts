@@ -4,11 +4,11 @@ from RealtimeTTS import TextToAudioStream, CoquiEngine
 import pyaudio
 import uvicorn
 import os
-from utils import setup_ffmpeg, is_production_environment, signal_ready
+from utils import setup_ffmpeg, is_production_environment
 from models import SpeakRequest, TrainModelRequest, VoiceRequest
-from config import get_output_device, get_volume
+from config import get_volume
 from log import server_log, server_websocket_log
-from tts_utils import clone_voice
+from tts_utils import clone_voice, get_output_device_index
 
 # Setup FFmpeg for audio processing
 setup_ffmpeg()
@@ -60,7 +60,7 @@ async def speak(request: SpeakRequest):
             return {"status": "error", "message": "TTS not started. Use /start command first."}
         
         # Feed text to the stream
-        boxts_manager.stream.feed(request.text)
+        boxts_manager.stream.feed(request.text) 
 
         boxts_manager.stream.play_async()
         
@@ -84,6 +84,41 @@ async def clonevoice(request: TrainModelRequest):
         server_log(f"Error cloning voice: {str(e)}")
         await signal_ready_ws()
         return {"status": "error", "message": f"Failed to clone voice: {str(e)}"}
+    
+@app.post("/outputdevice")
+async def outputdevice():
+    server_log(f"Changing output device")
+    try:
+        if boxts_manager.stream is not None:
+            # Store current volume before stopping
+            current_volume = boxts_manager.stream.volume
+            boxts_manager.stream.stop()
+            
+            output_device_index = get_output_device_index()
+
+            # Clear the stream reference
+            boxts_manager.stream = None
+            
+            # Create new stream with updated output device
+            boxts_manager.stream = TextToAudioStream(
+                boxts_manager.engine,
+                output_device_index=output_device_index
+            )
+            
+            # Restore volume setting
+            boxts_manager.stream.volume = current_volume
+        else:
+            # No TTS stream exists yet, just log the change
+            server_log("No TTS stream exists yet, device will be used when TTS starts")
+        
+        await signal_ready_ws()
+        return {"status": "success", "message": "Output device changed successfully."}
+        
+    except Exception as e:
+        server_log(f"Error changing output device: {str(e)}")
+        await signal_ready_ws()
+        return {"status": "error", "message": f"Failed to change output device: {str(e)}"}
+
 
 @app.post("/start")
 async def start_tts(request: VoiceRequest):
@@ -95,31 +130,10 @@ async def start_tts(request: VoiceRequest):
             server_log("TTS already started, try using /changevoice")
             await signal_ready_ws()
             return {"status": "error", "message": "TTS already started, try using /changevoice"}
-        # Get audio device configuration
-        output_device_name = get_output_device()
 
-        # Prevent problematic VB Cable setup
-        if output_device_name == "CABLE Input (VB-Audio Virtual Cable)" or "CABLE In 16ch (VB-Audio Virtual Cable)":
-            output_device_name = "CABLE Input (VB-Audio Virtual C"
-            server_log(f"Avoiding VB Cable problems by defaulting to {output_device_name}")
+        output_device_index = get_output_device_index()
 
         volume = get_volume()
-
-        # Get output device index using pyaudio
-        p = pyaudio.PyAudio()
-        output_device_index = None
-        
-        for i in range(p.get_device_count()):
-            device_info = p.get_device_info_by_index(i)
-            if device_info['name'] == output_device_name:
-                output_device_index = i
-                break
-        
-        p.terminate()
-        
-        if output_device_index is None:
-            output_device_index = 0  # Use default device
-            server_log(f"Device '{output_device_name}' not found, using default device")
 
         server_log(f"Selected output device index: {output_device_index}")
 

@@ -65,7 +65,13 @@ pub async fn outputdevice_command(argument: Option<String>, state: State<'_, cra
         Some(device_name) => {
             let _ = config::set_output_device(&state, &device_name);
             crate::log::tauri_log(&format!("Selected output device: {}", device_name));
-            Ok(format!("Output device set to: {}", device_name))
+            
+            match bridge::send_outputdevice_request().await {
+                Ok(_response) => {
+                    Ok(format!("Output device set to: {}", device_name))
+                },
+                Err(e) => Err(format!("Failed to update output device: {}", e)),
+            }
         },
         None => Err("No output device selected".to_string()),
     }
@@ -245,7 +251,7 @@ pub async fn help_command(app: tauri::AppHandle) -> Result<String, String> {
     let help_window = WebviewWindowBuilder::new(
         &app,
         "help", 
-        WebviewUrl::App("src/help.html".into())
+        WebviewUrl::App("help.html".into())
     )
     .title("Boxts Help")
     .center()

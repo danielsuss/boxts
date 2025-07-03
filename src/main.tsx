@@ -95,7 +95,11 @@ function App() {
 
     if (items.length > 0) {
       // Set loading state immediately for commands that will trigger ready signal
-      if (["start", "clonevoice", "changevoice"].includes(commandForItems)) {
+      if (
+        ["start", "clonevoice", "changevoice", "outputdevice"].includes(
+          commandForItems
+        )
+      ) {
         setLoading(true);
       }
 
@@ -148,7 +152,9 @@ function App() {
     // Set loading state for commands that will trigger ready signal
     if (text.startsWith("/")) {
       const commandName = text.slice(1).split(" ")[0];
-      if (["stop", "ready", "clonevoice"].includes(commandName)) {
+      if (
+        ["stop", "ready", "clonevoice", "restartserver"].includes(commandName)
+      ) {
         setLoading(true);
       }
     }
@@ -369,7 +375,9 @@ function App() {
           async ({ payload: focused }) => {
             if (!focused) {
               try {
-                const lostFocusBehaviour = await invoke<string>("get_lostfocus_behaviour");
+                const lostFocusBehaviour = await invoke<string>(
+                  "get_lostfocus_behaviour"
+                );
                 if (lostFocusBehaviour === "hide") {
                   window.hide().catch(console.error);
                 }
@@ -411,9 +419,9 @@ function App() {
         e.preventDefault();
       }
     };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   return (
