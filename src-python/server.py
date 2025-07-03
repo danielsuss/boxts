@@ -256,6 +256,7 @@ async def change_voice(request: VoiceRequest):
     try:
         # Check if engine exists
         if boxts_manager.engine is None:
+            await signal_ready_ws()
             return {"status": "error", "message": "TTS engine not started. Use /start command first."}
         
         # Change the voice on the existing engine

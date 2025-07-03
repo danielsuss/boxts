@@ -54,6 +54,7 @@ ffmpeg-resources
 realtimetts-resources
 
 # Other
+CLAUDE.md
 plan.md
 setup_plan.png
 prompts.md
