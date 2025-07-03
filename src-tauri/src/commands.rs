@@ -245,7 +245,7 @@ pub async fn help_command(app: tauri::AppHandle) -> Result<String, String> {
     let help_window = WebviewWindowBuilder::new(
         &app,
         "help", 
-        WebviewUrl::App("help.html".into())
+        WebviewUrl::App("src/help.html".into())
     )
     .title("Boxts Help")
     .center()
