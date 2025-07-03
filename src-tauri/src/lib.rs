@@ -113,6 +113,15 @@ fn is_dialog_active(state: State<AppState>) -> bool {
     *state.dialog_active.lock().unwrap()
 }
 
+#[tauri::command]
+fn get_environment_type() -> String {
+    if cfg!(debug_assertions) {
+        "developer".to_string()
+    } else {
+        "production".to_string()
+    }
+}
+
 
 #[tauri::command]
 async fn process_input(text: String, app: tauri::AppHandle, state: State<'_, AppState>) -> Result<String, String> {
@@ -230,7 +239,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices, get_volume_values, get_voices, is_dialog_active])
+        .invoke_handler(tauri::generate_handler![process_input, get_available_commands, get_output_devices, get_volume_values, get_voices, is_dialog_active, get_environment_type])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

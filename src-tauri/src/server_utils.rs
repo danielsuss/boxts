@@ -13,7 +13,7 @@ pub fn get_python_paths() -> (PathBuf, PathBuf) {
         )
     } else {
         (
-            PathBuf::from("./_up_/var/venv/Scripts/python.exe"),
+            PathBuf::from("./_up_/var/venv/Scripts/pythonw.exe"),
             PathBuf::from("./_up_/src-python/server.py")
         )
     }
@@ -53,6 +53,13 @@ pub fn stop_server(state: State<crate::AppState>) {
     }
 }
 
+pub async fn emit_ready(app_handle: tauri::AppHandle) {
+    crate::log::tauri_websocket_log("Ready!");
+    if let Err(e) = app_handle.emit("ready", ()) {
+        crate::log::tauri_log(&format!("Failed to emit ready event: {}", e));
+    }
+}
+
 pub async fn listen_for_ready(app_handle: tauri::AppHandle) {
     tokio::spawn(async move {
         loop {
@@ -64,10 +71,7 @@ pub async fn listen_for_ready(app_handle: tauri::AppHandle) {
                         match msg {
                             Ok(Message::Text(text)) => {
                                 if text == "ready" {
-                                    crate::log::tauri_websocket_log("Ready!");
-                                    if let Err(e) = app_handle.emit("ready", ()) {
-                                        crate::log::tauri_log(&format!("Failed to emit ready event: {}", e));
-                                    }
+                                   emit_ready(app_handle.clone()).await;
                                 }
                             }
                             Ok(Message::Close(_)) => {

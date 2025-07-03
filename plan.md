@@ -84,3 +84,17 @@ BACKEND
 GENERAL
 
 - debug virtual audio cable not working
+
+02/07/25
+
+FRONT END
+
+- Loading... while waiting for
+  - server to start/restart
+  - clonevoice
+  - tts starting
+
+BUILD TEST
+
+- have output as log aswell as stdout - possible?
+- loading not working for clonevoice

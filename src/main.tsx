@@ -148,7 +148,7 @@ function App() {
     // Set loading state for commands that will trigger ready signal
     if (text.startsWith("/")) {
       const commandName = text.slice(1).split(" ")[0];
-      if (["stop", "ready"].includes(commandName)) {
+      if (["stop", "ready", "clonevoice"].includes(commandName)) {
         setLoading(true);
       }
     }
@@ -295,6 +295,15 @@ function App() {
   const getCharWidth = () => {
     return Math.round(getCanvasContext().measureText("A").width);
   };
+
+  // Set initial loading state based on environment
+  useEffect(() => {
+    invoke<string>("get_environment_type")
+      .then((envType) => {
+        setLoading(envType !== "developer");
+      })
+      .catch(console.error);
+  }, []);
 
   // Fetch available commands on startup
   useEffect(() => {
@@ -476,9 +485,7 @@ function App() {
                 outline: "none",
                 backgroundColor: "transparent",
                 color:
-                  selectedItemIndex === 0
-                    ? colors.itemPrimary
-                    : colors.itemSecondary,
+                  selectedItemIndex === 0 ? colors.suggestion : colors.error,
                 caretColor: "transparent",
                 zIndex: 2,
               }}
@@ -492,9 +499,7 @@ function App() {
                 fontFamily: "Consolas, 'Courier New', monospace",
                 fontStyle: "italic",
                 color:
-                  selectedItemIndex === 0
-                    ? colors.itemPrimary
-                    : colors.itemSecondary,
+                  selectedItemIndex === 0 ? colors.suggestion : colors.error,
                 zIndex: 4,
               }}
             >

@@ -24,11 +24,14 @@ app = FastAPI(title="Boxts TTS Server", version="0.1.0")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     ready_connections.add(websocket)
+    
+    # Send ready signal immediately when connection is established
+    await signal_ready_ws()
+    
     try:
         # Keep connection alive
         while True:
             await websocket.receive_text()
-            await signal_ready_ws()
     except Exception:
         pass
     finally:

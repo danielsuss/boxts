@@ -125,7 +125,10 @@ pub async fn clonevoice_command(app: tauri::AppHandle, state: State<'_, crate::A
                 Err(e) => Err(format!("Failed to start voice cloning: {}", e)),
             }
         },
-        None => Ok("File selection cancelled".to_string()),
+        None => {
+            server_utils::emit_ready(app.clone()).await;
+            Ok("File selection cancelled".to_string())
+        },
     }
 }
 
