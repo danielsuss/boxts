@@ -3,27 +3,32 @@ from config import get_output_device
 from log import server_log
 
 def get_output_device_index():
-    output_device_name = get_output_device()
+    full_device_name = get_output_device()
 
-    # Prevent problematic VB Cable setup
-    if output_device_name in ["CABLE Input (VB-Audio Virtual Cable)", "CABLE In 16ch (VB-Audio Virtual Cable)"]:
-        output_device_name = "CABLE Input (VB-Audio Virtual C"
-        server_log(f"Avoiding VB Cable problems by defaulting to {output_device_name}")
-
-    # Get output device index using pyaudio
+    # Get all available devices using pyaudio
     p = pyaudio.PyAudio()
-    output_device_index = None
+    matching_devices = []
     
     for i in range(p.get_device_count()):
         device_info = p.get_device_info_by_index(i)
-        if device_info['name'] == output_device_name and device_info['maxOutputChannels'] > 0:
-            output_device_index = i
-            break
+        device_name = device_info['name']
+        
+        # Only consider output devices and check if device name is substring of full name
+        if device_info['maxOutputChannels'] > 0 and device_name in full_device_name:
+            matching_devices.append({
+                'index': i,
+                'name': device_name,
+                'length': len(device_name)
+            })
     
     p.terminate()
     
-    if output_device_index is None:
-        output_device_index = 0  # Use default device
-        server_log(f"Device '{output_device_name}' not found, using default device")
-
-    return output_device_index
+    if matching_devices:
+        # Find device with shortest name (most likely to work with RealtimeTTS)
+        shortest_device = min(matching_devices, key=lambda d: d['length'])
+        server_log(f"Selected device '{shortest_device['name']}' (shortest match for '{full_device_name}')")
+        return shortest_device['index']
+    else:
+        # No matching devices found, use default
+        server_log(f"No matching devices found for '{full_device_name}', using default device")
+        return 0
