@@ -14,6 +14,7 @@ from TTS.tts.models import setup_model as setup_tts_model
 import logging
 from environment import is_production_environment
 from log import server_log, SERVER_STRING
+from websocket import signal_notification_ws
 
 def download_file(url, destination):
     response = requests.get(url, stream=True)
@@ -29,7 +30,7 @@ def download_file(url, destination):
 
     progress_bar.close()
 
-def download_xtts_model(model_version="v2.0.3", models_base_path=None):
+async def download_xtts_model(model_version="v2.0.3", models_base_path=None):
     if not models_base_path:
         models_base_path = "./models"
     
@@ -47,6 +48,7 @@ def download_xtts_model(model_version="v2.0.3", models_base_path=None):
         file_path = os.path.join(model_folder, file_name)
         if not os.path.exists(file_path):
             server_log(f"Downloading {file_name} to {file_path}...")
+            await signal_notification_ws(f"downloading {file_name}")
             download_file(url, file_path)
             server_log(f"{file_name} downloaded successfully.")
         else:
@@ -92,7 +94,7 @@ def compute_speaker_embeddings(model, audio_file_path, voice_name, voices_path):
 
     return embedding_file
 
-def clone_voice(audio_file_path):
+async def clone_voice(audio_file_path):
     if is_production_environment():
         models_path = "./realtimetts-resources/models"
         voices_path = "./realtimetts-resources/voices"
@@ -103,9 +105,12 @@ def clone_voice(audio_file_path):
     os.makedirs(models_path, exist_ok=True)
     os.makedirs(voices_path, exist_ok=True)
     
-    model_path = download_xtts_model("v2.0.3", models_path)
+    model_path = await download_xtts_model("v2.0.3", models_path)
+    
+    await signal_notification_ws("loading model")
     model = load_xtts_model(model_path)
     
+    await signal_notification_ws("cloning voice")
     voice_name = os.path.splitext(os.path.basename(audio_file_path))[0]
     embedding_path = compute_speaker_embeddings(
         model, audio_file_path, voice_name, voices_path

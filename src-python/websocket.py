@@ -29,3 +29,13 @@ async def signal_ready_ws():
                 server_websocket_log("Ready!")
             except Exception:
                 ready_connections.discard(connection)
+
+async def signal_notification_ws(message: str):
+    """Send notification message to all WebSocket connections"""
+    if ready_connections:
+        for connection in ready_connections.copy():
+            try:
+                await connection.send_text(f"notification {message}")
+                server_websocket_log(f"Notification: {message}")
+            except Exception:
+                ready_connections.discard(connection)

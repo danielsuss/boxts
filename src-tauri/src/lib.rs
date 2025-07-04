@@ -246,8 +246,8 @@ pub fn run() {
                                     *server_process = Some(child);
                                 }
                                 
-                                // Start WebSocket listener for ready signals
-                                server_utils::listen_for_ready(app_handle.clone()).await;
+                                // Start WebSocket listener for ready signals and notifications
+                                server_utils::websocket_listener(app_handle.clone()).await;
                             },
                             Err(e) => {
                                 eprintln!("Failed to start Python server: {}", e);

@@ -4,7 +4,7 @@ from audio_devices import get_output_device_index
 from config import get_volume
 from environment import is_production_environment
 from log import server_log
-from websocket import signal_ready_ws
+from websocket import signal_ready_ws, signal_notification_ws
 
 boxts_manager = BoxtsManager()
 
@@ -33,7 +33,10 @@ async def start_tts(voice: str):
         if boxts_manager.engine is not None:
             server_log("TTS already started, try using /changevoice")
             await signal_ready_ws()
+            await signal_notification_ws("tts already started • try using /changevoice")
             return {"status": "error", "message": "TTS already started, try using /changevoice"}
+
+        await signal_notification_ws("configuring output device")
 
         output_device_index = get_output_device_index()
         volume = get_volume()
@@ -47,6 +50,8 @@ async def start_tts(voice: str):
             voices_path = "../realtimetts-resources/voices"
             models_path = "../realtimetts-resources/models"
 
+        await signal_notification_ws("initialising engine")
+
         # Create CoquiEngine with voice
         boxts_manager.engine = CoquiEngine(
             voice=voice,
@@ -55,6 +60,8 @@ async def start_tts(voice: str):
             specific_model="v2.0.3",
             device="cuda"
         )
+
+        await signal_notification_ws("engaging stream")
         
         # Create TextToAudioStream with volume
         boxts_manager.stream = TextToAudioStream(
@@ -72,11 +79,13 @@ async def start_tts(voice: str):
         
         server_log(f"TTS started successfully with voice: {voice}")
         await signal_ready_ws()
+        await signal_notification_ws("ready!")
         return {"status": "success", "message": f"TTS started with voice: {voice}"}
         
     except Exception as e:
         server_log(f"Error starting TTS: {str(e)}")
         await signal_ready_ws()
+        await signal_notification_ws("error starting tts")
         return {"status": "error", "message": f"Failed to start TTS: {str(e)}"}
 
 async def stop_tts():
@@ -86,11 +95,13 @@ async def stop_tts():
         # Stop and cleanup stream if it exists
         if boxts_manager.stream is not None:
             server_log("Stopping TextToAudioStream...")
+            await signal_notification_ws("disengaging stream")
             boxts_manager.stream.stop()
             
             # Shutdown the engine if it exists
             if boxts_manager.stream.engine is not None:
                 server_log("Shutting down CoquiEngine...")
+                await signal_notification_ws("destroying engine")
                 boxts_manager.stream.engine.shutdown()
             
             # Clear the stream reference
@@ -104,11 +115,13 @@ async def stop_tts():
 
         server_log("TTS stopped and resources cleaned up successfully")
         await signal_ready_ws()
+        await signal_notification_ws("done!")
         return {"status": "success", "message": "TTS stopped and resources cleaned up"}
         
     except Exception as e:
         server_log(f"Error stopping TTS: {str(e)}")
         await signal_ready_ws()
+        await signal_notification_ws("error stopping tts")
         return {"status": "error", "message": f"Failed to stop TTS: {str(e)}"}
 
 async def change_voice(voice: str):
@@ -118,10 +131,12 @@ async def change_voice(voice: str):
         # Check if engine exists
         if boxts_manager.engine is None:
             await signal_ready_ws()
+            await signal_notification_ws("voice changed • try using /start")
             return {"status": "error", "message": "TTS engine not started. Use /start command first."}
         
         # Change the voice on the existing engine
         server_log(f"Setting voice to: {voice}")
+        await signal_notification_ws("applying vocal patch")
         boxts_manager.engine.set_voice(voice)
 
         boxts_manager.stream.feed("YOU'RE ROCKING WITH ME NOW PRETTY BOY")
@@ -129,11 +144,13 @@ async def change_voice(voice: str):
         
         server_log(f"Voice successfully changed to: {voice}")
         await signal_ready_ws()
+        await signal_notification_ws("voice changed!")
         return {"status": "success", "message": f"Voice changed to: {voice}"}
         
     except Exception as e:
         server_log(f"Error changing voice: {str(e)}")
         await signal_ready_ws()
+        await signal_notification_ws("error changing voice")
         return {"status": "error", "message": f"Failed to change voice: {str(e)}"}
 
 async def update_volume():
@@ -158,6 +175,7 @@ async def change_output_device():
     server_log(f"Changing output device")
     try:
         if boxts_manager.stream is not None:
+            await signal_notification_ws("changing output device")
             # Store current volume before stopping
             current_volume = boxts_manager.stream.volume
             boxts_manager.stream.stop()
@@ -180,14 +198,17 @@ async def change_output_device():
             server_log("No TTS stream exists yet, device will be used when TTS starts")
         
         await signal_ready_ws()
+        await signal_notification_ws("output device changed!")
         return {"status": "success", "message": "Output device changed successfully."}
         
     except Exception as e:
         server_log(f"Error changing output device: {str(e)}")
         await signal_ready_ws()
+        await signal_notification_ws("error changing output device")
         return {"status": "error", "message": f"Failed to change output device: {str(e)}"}
 
 async def send_ready_signal():
     server_log("Manual ready signal requested")
     await signal_ready_ws()
+    await signal_notification_ws("ready!")
     return {"status": "success", "message": "Ready signal sent"}

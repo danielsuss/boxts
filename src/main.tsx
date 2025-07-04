@@ -36,6 +36,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [loadingDots, setLoadingDots] = useState(1);
 
+  // Notification state
+  const [notification, setNotification] = useState("");
+
   // Color scheme
   const colors = {
     background: "#131313",
@@ -325,6 +328,13 @@ function App() {
     });
   }, []);
 
+  // Listen for notification events
+  useEffect(() => {
+    listen("notification", (event) => {
+      setNotification(event.payload as string);
+    });
+  }, []);
+
   // Loading animation
   useEffect(() => {
     if (!loading) return;
@@ -542,6 +552,7 @@ function App() {
             value={text}
             onChange={(e) => {
               setText(e.target.value);
+              setNotification(""); // Clear notification when text changes
               resetTabCycleMode();
               updateCursorPos();
               updateSuggestion(e.target.value);
@@ -623,6 +634,22 @@ function App() {
             {suggestion && cursorPos === text.length
               ? suggestion[0]
               : text[cursorPos] || ""}
+          </div>
+        )}
+        {notification && (
+          <div
+            style={{
+              position: "absolute",
+              left: "10px",
+              top: "22px",
+              fontSize: "10px",
+              fontFamily: "Consolas, 'Courier New', monospace",
+              fontStyle: "italic",
+              color: colors.suggestion,
+              zIndex: 4,
+            }}
+          >
+{notification}
           </div>
         )}
       </form>

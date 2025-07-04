@@ -60,18 +60,28 @@ pub async fn emit_ready(app_handle: tauri::AppHandle) {
     }
 }
 
-pub async fn listen_for_ready(app_handle: tauri::AppHandle) {
+pub async fn emit_notification(app_handle: tauri::AppHandle, message: String) {
+    crate::log::tauri_websocket_log(&format!("Notification: {}", message));
+    if let Err(e) = app_handle.emit("notification", message) {
+        crate::log::tauri_log(&format!("Failed to emit notification event: {}", e));
+    }
+}
+
+pub async fn websocket_listener(app_handle: tauri::AppHandle) {
     tokio::spawn(async move {
         loop {
             match connect_async("ws://127.0.0.1:8000/ws").await {
                 Ok((mut ws_stream, _)) => {
-                    crate::log::tauri_websocket_log("Connected to WebSocket for ready signals");
+                    crate::log::tauri_websocket_log("Connected to WebSocket for ready signals and notifications");
                     
                     while let Some(msg) = ws_stream.next().await {
                         match msg {
                             Ok(Message::Text(text)) => {
                                 if text == "ready" {
-                                   emit_ready(app_handle.clone()).await;
+                                    emit_ready(app_handle.clone()).await;
+                                } else if text.starts_with("notification ") {
+                                    let message = text.strip_prefix("notification ").unwrap_or("").to_string();
+                                    emit_notification(app_handle.clone(), message).await;
                                 }
                             }
                             Ok(Message::Close(_)) => {
