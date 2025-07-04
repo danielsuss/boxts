@@ -1,6 +1,6 @@
 import os
 import tomllib
-from utils import is_production_environment
+from environment import is_production_environment
 
 def get_config_path():
     if is_production_environment():

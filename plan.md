@@ -98,3 +98,14 @@ BUILD TEST
 
 - have output as log aswell as stdout - possible?
 - loading not working for clonevoice
+
+04/07/25
+
+- remove cached files from gh
+- truncation processing for output device
+- refactor server.py
+- mini notifications during loading
+- closing on startup in production build due to lost focus
+- directing tauri logs to server.log
+- find out why cargo.lock detects changes with nothing changing.
+- bump to v1.1.0
