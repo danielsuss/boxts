@@ -1,4 +1,5 @@
 from fastapi import WebSocket
+import asyncio
 from log import server_websocket_log
 
 # WebSocket connections for ready signals
@@ -39,3 +40,6 @@ async def signal_notification_ws(message: str):
                 server_websocket_log(f"Notification: {message}")
             except Exception:
                 ready_connections.discard(connection)
+    
+    # Yield control to allow WebSocket message to be sent immediately
+    await asyncio.sleep(0)

@@ -641,7 +641,7 @@ function App() {
             style={{
               position: "absolute",
               left: "10px",
-              top: "22px",
+              top: "25px",
               fontSize: "10px",
               fontFamily: "Consolas, 'Courier New', monospace",
               fontStyle: "italic",
@@ -649,7 +649,7 @@ function App() {
               zIndex: 4,
             }}
           >
-{notification}
+            {notification}
           </div>
         )}
       </form>
