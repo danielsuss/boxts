@@ -46,6 +46,7 @@ src-tauri/gen
 venv
 python-resources
 src-python/__pycache__
+src-python/services/__pycache__
 
 # ffmpeg
 ffmpeg-resources
