@@ -4,7 +4,7 @@ A floating text-to-speech overlay application that converts your typed text into
 
 <div align="center">
   <a href="https://youtu.be/xsLEC4dBKMQ?si=opn0xcDNw_dGeHoQ" target="_blank">
-    <img src="assets/boxts.gif" 
+    <img src="public/assets/boxts.gif" 
          alt="boxts Demo Video">
   </a>
   <br><br>
