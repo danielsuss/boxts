@@ -2,6 +2,15 @@
 
 A floating text-to-speech overlay application that converts your typed text into speech.
 
+<div align="center">
+  <a href="https://youtu.be/xsLEC4dBKMQ?si=opn0xcDNw_dGeHoQ" target="_blank">
+    <img src="assets/boxts.gif" 
+         alt="boxts Demo Video">
+  </a>
+  <br><br>
+  <em>Click to watch the demo on YouTube</em>
+</div>
+
 ## How it works
 
 - Press `Alt+Enter` anywhere on your system to open the text input overlay
