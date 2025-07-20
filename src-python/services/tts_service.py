@@ -72,7 +72,7 @@ async def start_tts(voice: str):
         boxts_manager.stream.volume = volume
 
         # Feed initial text before starting async streaming (legacy pattern)
-        boxts_manager.stream.feed("HOLY FUCK WE'RE BACK")
+        boxts_manager.stream.feed("TTS SESSION STARTED")
         
         # Start async streaming
         boxts_manager.stream.play_async()
@@ -139,7 +139,7 @@ async def change_voice(voice: str):
         await signal_notification_ws("applying vocal patch")
         boxts_manager.engine.set_voice(voice)
 
-        boxts_manager.stream.feed("YOU'RE ROCKING WITH ME NOW PRETTY BOY")
+        boxts_manager.stream.feed("NEW VOCAL PATCH APPLIED")
         boxts_manager.stream.play_async()
         
         server_log(f"Voice successfully changed to: {voice}")
