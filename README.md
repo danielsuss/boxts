@@ -2,12 +2,9 @@
 
 A floating text-to-speech overlay application that converts your typed text into speech.
 
+[![boxts](https://img.youtube.com/vi/xsLEC4dBKMQ/maxresdefault.jpg)](https://youtu.be/xsLEC4dBKMQ?si=zZs-UTO7nRzH0vov)
+
 <div align="center">
-  <a href="https://youtu.be/xsLEC4dBKMQ?si=opn0xcDNw_dGeHoQ" target="_blank">
-    <img src="public/assets/boxts.gif" 
-         alt="boxts Demo Video">
-  </a>
-  <br><br>
   <em>Click to watch the demo on YouTube</em>
 </div>
 
@@ -64,3 +61,4 @@ All commands start with `/` and can be typed in the text input. Commands that re
 - `/ready` - Send manual ready signal to backend
 
 Built with Tauri v2, React TypeScript, and Python.
+
